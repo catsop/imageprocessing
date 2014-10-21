@@ -9,21 +9,21 @@ logger::LogChannel imagehttpreaderlog("imagehttpreaderlog", "[ImageHttpReader] "
 ImageHttpReader::ImageHttpReader(std::string url) :
     _url(url)
 {
-    
+
 }
 
 void
 ImageHttpReader::readImage()
 {
     LOG_DEBUG(imagehttpreaderlog) << "Will attempt to read image from " << _url << std::endl;
-    
+
     //Read the image url
     HttpClient::response res = HttpClient::get(_url);
     //TODO check that res.code == 200 OK
     int size = res.body.size();
-    
+
     LOG_DEBUG(imagehttpreaderlog) << "Read " << size << " things" << std::endl;
-    
+
     // Create a blob from the body as an array of char.
     // I'm frankly surprised that this works.
     Magick::Blob blob(res.body.c_str(), size);
@@ -36,19 +36,17 @@ ImageHttpReader::readImage()
 
 	// allocate output image
 	_image = new Image(w, h);
-    
+
     LOG_DEBUG(imagehttpreaderlog) << "Image is size " << w << " by " << h << std::endl;
-    
+
     // Get a pixel reference
     pixels = image.getPixels(0, 0, w, h);
-    
+
     LOG_DEBUG(imagehttpreaderlog) << "Pushing pixels..." << std::endl;
-    
+
     for (int i = 0; i < w * h; ++i)
     {
-        Magick::Color color = pixels[i];
-        Magick::ColorGray gColor = color;
-        double dval = gColor.shade();
+        double dval = Magick::Color::scaleQuantumToDouble( pixels[i].green );
         (*_image)[i] = (float)dval;
     }
 }
