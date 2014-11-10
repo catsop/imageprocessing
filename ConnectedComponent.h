@@ -113,7 +113,9 @@ private:
 	util::rect<int>                         _boundingBox;
 
 	// the center of mass of this component
-	util::point<double>                     _center;
+	mutable util::point<double>             _center;
+
+	mutable bool _centerDirty;
 
 	// the image, this component was extracted from
 	boost::shared_ptr<Image>                _source;

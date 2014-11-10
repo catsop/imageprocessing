@@ -19,6 +19,7 @@ ConnectedComponent::ConnectedComponent(
 	_value(value),
 	_boundingBox(0, 0, 0, 0),
 	_center(0, 0),
+	_centerDirty(true),
 	_source(source),
 	_begin(_pixels->begin() + begin),
 	_end(_pixels->begin() + end),
@@ -41,11 +42,7 @@ ConnectedComponent::ConnectedComponent(
 		_boundingBox.maxX = std::max(_boundingBox.maxX, (int)pixel.x + 1);
 		_boundingBox.minY = std::min(_boundingBox.minY, (int)pixel.y);
 		_boundingBox.maxY = std::max(_boundingBox.maxY, (int)pixel.y + 1);
-
-		_center += pixel;
 	}
-
-	_center /= getSize();
 }
 
 double
@@ -56,6 +53,19 @@ ConnectedComponent::getValue() const {
 
 const util::point<double>&
 ConnectedComponent::getCenter() const {
+
+	if (_centerDirty) {
+		_center.x = 0;
+		_center.y = 0;
+
+		foreach (const util::point<unsigned int>& pixel, getPixels()) {
+
+			_center += pixel;
+		}
+
+		_center /= getSize();
+		_centerDirty = false;
+	}
 
 	return _center;
 }
