@@ -1,6 +1,7 @@
 
 #include <util/httpclient.h>
 #include <ImageMagick/Magick++.h>
+#include <util/exceptions.h>
 #include <util/Logger.h>
 #include "ImageHttpReader.h"
 
@@ -19,7 +20,12 @@ ImageHttpReader::readImage()
 
     //Read the image url
     HttpClient::response res = HttpClient::get(_url);
-    //TODO check that res.code == 200 OK
+    if (res.code != 200)
+    {
+        UTIL_THROW_EXCEPTION(
+                IOError,
+                "While attempting to GET image " << _url << " received response status " << res.code);
+    }
     int size = res.body.size();
 
     LOG_DEBUG(imagehttpreaderlog) << "Read " << size << " things" << std::endl;
