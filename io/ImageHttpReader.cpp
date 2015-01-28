@@ -24,7 +24,9 @@ ImageHttpReader::readImage()
     {
         UTIL_THROW_EXCEPTION(
                 IOError,
-                "While attempting to GET image " << _url << " received response status " << res.code);
+                "While attempting to GET image " << _url <<
+                " received response status " << res.code <<
+                " with body " << res.body);
     }
     int size = res.body.size();
 
