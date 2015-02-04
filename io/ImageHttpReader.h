@@ -5,6 +5,8 @@
 #include <imageprocessing/Image.h>
 #include "ImageReader.h"
 
+struct ImageMissing : virtual IOError {};
+
 class ImageHttpReader : public ImageReader
 {
 

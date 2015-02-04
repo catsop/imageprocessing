@@ -22,11 +22,22 @@ ImageHttpReader::readImage()
     HttpClient::response res = HttpClient::get(_url);
     if (res.code != 200)
     {
-        UTIL_THROW_EXCEPTION(
-                IOError,
-                "While attempting to GET image " << _url <<
-                " received response status " << res.code <<
-                " with body " << res.body);
+        if (res.code == 404)
+        {
+            // Handle missing images separately from general HTTP errors which
+            // may be transient.
+            UTIL_THROW_EXCEPTION(
+                    ImageMissing,
+                    "Image not found (404) " << _url);
+        }
+        else
+        {
+            UTIL_THROW_EXCEPTION(
+                    IOError,
+                    "While attempting to GET image " << _url <<
+                    " received response status " << res.code <<
+                    " with body " << res.body);
+        }
     }
     int size = res.body.size();
 
