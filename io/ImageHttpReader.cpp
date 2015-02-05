@@ -1,5 +1,3 @@
-
-#include <util/httpclient.h>
 #include <ImageMagick/Magick++.h>
 #include <util/exceptions.h>
 #include <util/Logger.h>
@@ -7,8 +5,9 @@
 
 logger::LogChannel imagehttpreaderlog("imagehttpreaderlog", "[ImageHttpReader] ");
 
-ImageHttpReader::ImageHttpReader(std::string url) :
-    _url(url)
+ImageHttpReader::ImageHttpReader(std::string url, const HttpClient& client) :
+    _url(url),
+    _client(client)
 {
 
 }
@@ -19,7 +18,7 @@ ImageHttpReader::readImage()
     LOG_DEBUG(imagehttpreaderlog) << "Will attempt to read image from " << _url << std::endl;
 
     //Read the image url
-    HttpClient::response res = HttpClient::get(_url);
+    HttpClient::response res = _client.get(_url);
     if (res.code != 200)
     {
         if (res.code == 404)
