@@ -1,4 +1,4 @@
-#include <ImageMagick/Magick++.h>
+#include <Magick++.h>
 #include <util/exceptions.h>
 #include <util/Logger.h>
 #include "ImageHttpReader.h"
