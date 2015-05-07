@@ -19,7 +19,7 @@ ImageHttpReader::readImage()
 
     //Read the image url
     HttpClient::response res = _client.get(_url);
-    if (res.code != 200)
+    if (res.code != 200 /* http */ && res.code != 0 /* file */)
     {
         if (res.code == 404)
         {
