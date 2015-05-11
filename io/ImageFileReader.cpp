@@ -21,29 +21,39 @@ ImageFileReader::readImage() {
 	// abort if image is not grayscale
 	if (!info.isGrayscale()) {
 
-		LOG_ERROR(imagefilereaderlog) << _filename << " is not a gray-scale image!" << std::endl;
-		return;
+		UTIL_THROW_EXCEPTION(
+				IOError,
+				_filename << " is not a gray-scale image!");
 	}
 
 	// allocate image
 	_image = new Image(info.width(), info.height());
+	_image->setIdentifiyer(_filename);
 
-	// read image
-	importImage(info, vigra::destImage(*_image));
+	try {
+
+		// read image
+		importImage(info, vigra::destImage(*_image));
+
+	} catch (vigra::PostconditionViolation& e) {
+
+		UTIL_THROW_EXCEPTION(
+				IOError,
+				"error reading " << _filename << ": " << e.what());
+	}
 
 	if (strcmp(info.getPixelType(), "FLOAT") == 0)
 		return;
 
 	// scale image to [0..1]
 
-	float factor = 1.0;
+	float factor;
 	if (strcmp(info.getPixelType(), "UINT8") == 0)
 		factor = 255.0;
-	else if (strcmp(info.getPixelType(), "INT16") == 0)
-		factor = 511.0;
 	else {
 
-		LOG_ERROR(imagefilereaderlog) << _filename << " has a unsupported pixel format: " << info.getPixelType() << std::endl;
+		factor = 1.0;
+		LOG_DEBUG(imagereaderlog) << _filename << " has pixel format " << info.getPixelType() << ", will not scale values" << std::endl;
 	}
 
 	vigra::transformImage(

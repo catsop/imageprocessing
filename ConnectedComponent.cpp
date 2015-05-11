@@ -12,8 +12,8 @@ ConnectedComponent::ConnectedComponent(
 		boost::shared_ptr<Image> source,
 		double value,
 		boost::shared_ptr<pixel_list_type> pixelList,
-		unsigned int begin,
-		unsigned int end) :
+		pixel_list_type::const_iterator begin,
+		pixel_list_type::const_iterator end) :
 
 	_pixels(pixelList),
 	_value(value),
@@ -21,27 +21,25 @@ ConnectedComponent::ConnectedComponent(
 	_center(0, 0),
 	_centerDirty(true),
 	_source(source),
-	_begin(_pixels->begin() + begin),
-	_end(_pixels->begin() + end),
 	_bitmapDirty(true),
-	_hashValue(0),
-	_hashDirty(true) {
+	_pixelRange(begin, end) {
 
 	// if there is at least one pixel
 	if (begin != end) {
 
-		_boundingBox.minX = _begin->x;
-		_boundingBox.maxX = _begin->x + 1;
-		_boundingBox.minY = _begin->y;
-		_boundingBox.maxY = _begin->y + 1;
+		_boundingBox.min().x() = begin->x();
+		_boundingBox.max().x() = begin->x() + 1;
+		_boundingBox.min().y() = begin->y();
+		_boundingBox.max().y() = begin->y() + 1;
 	}
 
-	foreach (const util::point<unsigned int>& pixel, getPixels()) {
+	typedef util::point<unsigned int,2> point2;
+	foreach (const point2& pixel, getPixels()) {
 
-		_boundingBox.minX = std::min(_boundingBox.minX, (int)pixel.x);
-		_boundingBox.maxX = std::max(_boundingBox.maxX, (int)pixel.x + 1);
-		_boundingBox.minY = std::min(_boundingBox.minY, (int)pixel.y);
-		_boundingBox.maxY = std::max(_boundingBox.maxY, (int)pixel.y + 1);
+		_boundingBox.min().x() = std::min(_boundingBox.min().x(), (int)pixel.x());
+		_boundingBox.max().x() = std::max(_boundingBox.max().x(), (int)pixel.x() + 1);
+		_boundingBox.min().y() = std::min(_boundingBox.min().y(), (int)pixel.y());
+		_boundingBox.max().y() = std::max(_boundingBox.max().y(), (int)pixel.y() + 1);
 	}
 }
 
@@ -51,7 +49,7 @@ ConnectedComponent::getValue() const {
 	return _value;
 }
 
-const util::point<double>&
+const util::point<double,2>&
 ConnectedComponent::getCenter() const {
 
 	if (_centerDirty) {
@@ -70,10 +68,10 @@ ConnectedComponent::getCenter() const {
 	return _center;
 }
 
-const std::pair<ConnectedComponent::const_iterator, ConnectedComponent::const_iterator>
+const std::pair<ConnectedComponent::const_iterator, ConnectedComponent::const_iterator>&
 ConnectedComponent::getPixels() const {
 
-	return std::make_pair(_begin, _end);
+	return _pixelRange;
 }
 
 const boost::shared_ptr<ConnectedComponent::pixel_list_type>
@@ -85,10 +83,10 @@ ConnectedComponent::getPixelList() const {
 unsigned int
 ConnectedComponent::getSize() const {
 
-	return _end - _begin;
+	return _pixelRange.second - _pixelRange.first;
 }
 
-const util::rect<int>&
+const util::box<int,2>&
 ConnectedComponent::getBoundingBox() const {
 
 	return _boundingBox;
@@ -101,8 +99,9 @@ ConnectedComponent::getBitmap() const {
 
 		_bitmap.reshape(bitmap_type::size_type(_boundingBox.width(), _boundingBox.height()), false);
 
-		foreach (const util::point<int>& pixel, getPixels())
-			_bitmap(pixel.x - _boundingBox.minX, pixel.y - _boundingBox.minY) = true;
+		typedef util::point<int,2> pointi2;
+		foreach (const pointi2& pixel, getPixels())
+			_bitmap(pixel.x() - _boundingBox.min().x(), pixel.y() - _boundingBox.min().y()) = true;
 
 		_bitmapDirty = false;
 	}
@@ -117,40 +116,47 @@ ConnectedComponent::operator<(const ConnectedComponent& other) const {
 }
 
 ConnectedComponent
-ConnectedComponent::translate(const util::point<int>& pt)
+ConnectedComponent::translate(const util::point<int,2>& pt)
 {
-	boost::shared_ptr<pixel_list_type> translation = boost::make_shared<pixel_list_type>();
+	boost::shared_ptr<pixel_list_type> translation = boost::make_shared<pixel_list_type>(getSize());
 	
-	foreach (const util::point<unsigned int>& pixel, getPixels())
+	typedef util::point<unsigned int,2> point2;
+	foreach (const point2& pixel, getPixels())
 	{
-		translation->push_back(pixel + pt);
+		translation->add(pixel + pt);
 	}
 	
-	return ConnectedComponent(_source, _value, translation, 0, translation->size());
+	return ConnectedComponent(_source, _value, translation, translation->begin(), translation->end());
 }
 
 
 ConnectedComponent
 ConnectedComponent::intersect(const ConnectedComponent& other) {
 
-	boost::shared_ptr<pixel_list_type> intersection = boost::make_shared<pixel_list_type>();
-
-	bitmap_type::size_type size = getBitmap().shape();
-
-	foreach (const util::point<unsigned int>& pixel, other.getPixels())
+	// find the intersection pixels
+	std::vector<util::point<unsigned int,2> > intersectionPixels;
+	bitmap_type::size_type size = _bitmap.shape();
+	typedef util::point<unsigned int,2> point2;
+	foreach (const point2& pixel, other.getPixels())
 		if (_boundingBox.contains(pixel)) {
 
-			unsigned int x = pixel.x - _boundingBox.minX;
-			unsigned int y = pixel.y - _boundingBox.minY;
+			unsigned int x = pixel.x() - _boundingBox.min().x();
+			unsigned int y = pixel.y() - _boundingBox.min().y();
 
 			if (x >= size[0] || y >= size[1])
 				continue;
 
 			if (_bitmap(x, y))
-				intersection->push_back(pixel);
+				intersectionPixels.push_back(pixel);
 		}
 
-	return ConnectedComponent(_source, _value, intersection, 0, intersection->size());
+	// create a pixel list for them
+	boost::shared_ptr<pixel_list_type> intersection =
+			boost::make_shared<pixel_list_type>(intersectionPixels.size());
+	foreach (const point2& pixel, intersectionPixels)
+		intersection->add(pixel);
+
+	return ConnectedComponent(_source, _value, intersection, intersection->begin(), intersection->end());
 }
 
 bool ConnectedComponent::intersects(const ConnectedComponent& other)
@@ -159,12 +165,13 @@ bool ConnectedComponent::intersects(const ConnectedComponent& other)
 	{
 		bitmap_type::size_type size = getBitmap().shape();
 
-		foreach (const util::point<unsigned int>& pixel, other.getPixels())
+		typedef util::point<unsigned int,2> point2;
+		foreach (const point2& pixel, other.getPixels())
 		{
 			if (_boundingBox.contains(pixel)) {
 
-				unsigned int x = pixel.x - _boundingBox.minX;
-				unsigned int y = pixel.y - _boundingBox.minY;
+				unsigned int x = pixel.x() - _boundingBox.min().x();
+				unsigned int y = pixel.y() - _boundingBox.min().y();
 
 				if (x >= size[0] || y >= size[1])
 					continue;
@@ -184,8 +191,8 @@ bool ConnectedComponent::intersects(const ConnectedComponent& other)
 bool
 ConnectedComponent::operator==(const ConnectedComponent& other) const
 {
-	util::rect<int> thisBound = getBoundingBox();
-	util::rect<int> otherBound = other.getBoundingBox();
+	util::box<int,2> thisBound = getBoundingBox();
+	util::box<int,2> otherBound = other.getBoundingBox();
 
 	if (thisBound == otherBound && hashValue() == other.hashValue())
 	{
@@ -194,18 +201,19 @@ ConnectedComponent::operator==(const ConnectedComponent& other) const
 		bitmap_type otherBitmap = other.getBitmap();
 		
 		//Check that the other's bitmap contains all of our pixels.
-		foreach (const util::point<unsigned int> pixel, getPixels())
+		typedef util::point<unsigned int,2> point2;
+		foreach (const point2& pixel, getPixels())
 		{
-			if (!otherBitmap(pixel.x - thisBound.minX, pixel.y - thisBound.minY))
+			if (!otherBitmap(pixel.x() - thisBound.min().x(), pixel.y() - thisBound.min().y()))
 			{
 				return false;
 			}
 		}
 		
 		//Check that our bitmap contains all of the other's pixels.
-		foreach (const util::point<unsigned int> pixel, other.getPixels())
+		foreach (const point2& pixel, other.getPixels())
 		{
-			if (!thisBitmap(pixel.x - otherBound.minX, pixel.y - otherBound.minY))
+			if (!thisBitmap(pixel.x() - otherBound.min().x(), pixel.y() - otherBound.min().y()))
 			{
 				return false;
 			}
@@ -221,31 +229,3 @@ ConnectedComponent::operator==(const ConnectedComponent& other) const
 	}
 }
 
-std::size_t
-ConnectedComponent::hashValue() const
-{
-	if (_hashDirty) {
-		// Calculate geometric hash value
-		boost::hash_combine(_hashValue, boost::hash_value(_boundingBox.minX));
-		boost::hash_combine(_hashValue, boost::hash_value(_boundingBox.minY));
-		boost::hash_combine(_hashValue, boost::hash_value(_boundingBox.maxX));
-		boost::hash_combine(_hashValue, boost::hash_value(_boundingBox.maxY));
-
-		const bitmap_type thisBitmap = getBitmap();
-		for (int x = 0; x < thisBitmap.width(); ++x)
-		{
-			for (int y = 0; y < thisBitmap.height(); ++y)
-			{
-				if (thisBitmap(x, y))
-				{
-					boost::hash_combine(_hashValue, boost::hash_value(x + _boundingBox.minX));
-					boost::hash_combine(_hashValue, boost::hash_value(y + _boundingBox.minY));
-				}
-			}
-		}
-
-		_hashDirty = false;
-	}
-
-	return _hashValue;
-}

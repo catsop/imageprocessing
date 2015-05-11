@@ -1,4 +1,5 @@
 #include <util/Logger.h>
+#include <util/exceptions.h>
 #include "ImageReader.h"
 
 logger::LogChannel imagereaderlog("imagereaderlog", "[ImageReader] ");

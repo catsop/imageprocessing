@@ -2,14 +2,17 @@
 #define IMAGEPROCESSING_IMAGE_STACK_H__
 
 #include <pipeline/all.h>
-#include <imageprocessing/Image.h>
+#include "Image.h"
+#include "DiscreteVolume.h"
 
-class ImageStack : public pipeline::Data {
+class ImageStack : public pipeline::Data, public DiscreteVolume {
 
 	// Image objects are shared between ImageStack
 	typedef std::vector<boost::shared_ptr<Image> > sections_type;
 
 public:
+
+	typedef Image::value_type               value_type;
 
 	typedef sections_type::iterator         iterator;
 
@@ -48,10 +51,16 @@ public:
 
 	unsigned int height() const { return (size() > 0 ? _sections[0]->height() : 0); }
 
+protected:
+
+	util::box<unsigned int,3> computeDiscreteBoundingBox() const override {
+
+		return util::box<unsigned int,3>(0, 0, 0, width(), height(), size());
+	}
+
 private:
 
 	sections_type _sections;
-
 };
 
 #endif // IMAGEPROCESSING_IMAGE_STACK_H__

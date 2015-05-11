@@ -1,5 +1,7 @@
 #include "ComponentTree.h"
 
+ComponentTree::Node::Node() {}
+
 ComponentTree::Node::Node(boost::shared_ptr<ConnectedComponent> component) :
 	_component(component) {}
 
@@ -23,10 +25,30 @@ ComponentTree::Node::addChild(boost::shared_ptr<ComponentTree::Node> componentNo
 	_children.push_back(componentNode);
 }
 
-std::vector<boost::shared_ptr<ComponentTree::Node> >
-ComponentTree::Node::getChildren() {
+bool
+ComponentTree::Node::removeChild(boost::shared_ptr<Node> child) {
+
+	std::vector<boost::shared_ptr<ComponentTree::Node> >::iterator i =
+			std::find(_children.begin(), _children.end(), child);
+
+	if (i == _children.end())
+		return false;
+
+	_children.erase(i);
+
+	return true;
+}
+
+const std::vector<boost::shared_ptr<ComponentTree::Node> >&
+ComponentTree::Node::getChildren() const {
 
 	return _children;
+}
+
+void
+ComponentTree::Node::setComponent(boost::shared_ptr<ConnectedComponent> component) {
+
+	_component = component;
 }
 
 boost::shared_ptr<ConnectedComponent>
@@ -42,7 +64,7 @@ void
 ComponentTree::clear() {
 
 	_root.reset();
-	_boundingBox = util::rect<double>(0, 0, 0, 0);
+	_boundingBox = util::box<double,2>(0, 0, 0, 0);
 }
 
 void
@@ -77,7 +99,7 @@ ComponentTree::count(boost::shared_ptr<ComponentTree::Node> node) const {
 	return numNodes;
 }
 
-const util::rect<double>&
+const util::box<double,2>&
 ComponentTree::getBoundingBox() const {
 
 	return _boundingBox;
@@ -122,19 +144,19 @@ ComponentTree::updateBoundingBox() {
 	_boundingBox = updateBoundingBox(_root);
 }
 
-util::rect<double>
+util::box<double,2>
 ComponentTree::updateBoundingBox(boost::shared_ptr<ComponentTree::Node> node) {
 
-	util::rect<double> boundingBox = node->getComponent()->getBoundingBox();
+	util::box<double,2> boundingBox = node->getComponent()->getBoundingBox();
 
 	foreach (boost::shared_ptr<ComponentTree::Node> child, node->getChildren()) {
 
-		util::rect<double> childBoundingBox = updateBoundingBox(child);
+		util::box<double,2> childBoundingBox = updateBoundingBox(child);
 
-		boundingBox.minX = std::min(boundingBox.minX, childBoundingBox.minX);
-		boundingBox.maxX = std::max(boundingBox.maxX, childBoundingBox.maxX);
-		boundingBox.minY = std::min(boundingBox.minY, childBoundingBox.minY);
-		boundingBox.maxY = std::max(boundingBox.maxY, childBoundingBox.maxY);
+		boundingBox.min().x() = std::min(boundingBox.min().x(), childBoundingBox.min().x());
+		boundingBox.max().x() = std::max(boundingBox.max().x(), childBoundingBox.max().x());
+		boundingBox.min().y() = std::min(boundingBox.min().y(), childBoundingBox.min().y());
+		boundingBox.max().y() = std::max(boundingBox.max().y(), childBoundingBox.max().y());
 	}
 
 	return boundingBox;

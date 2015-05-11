@@ -4,6 +4,7 @@
 #include <imageprocessing/ConnectedComponent.h>
 #include <util/foreach.h>
 #include <util/Logger.h>
+#include <util/box.hpp>
 #include <pipeline/all.h>
 
 static logger::LogChannel componenttreelog("componenttreelog", "[ComponentTree] ");
@@ -22,6 +23,11 @@ public:
 	class Node {
 
 	public:
+
+		/**
+		 * Create a new node that is not pointing to a component, yet.
+		 */
+		Node();
 
 		/**
 		 * Create a new node from a connected component.
@@ -53,11 +59,27 @@ public:
 		void addChild(boost::shared_ptr<Node> componentNode);
 
 		/**
+		 * Remove a child from this node.
+		 *
+		 * @param child A shared pointer to the child that is to be removed.
+		 *
+		 * @return true, if the child was found and removed.
+		 */
+		bool removeChild(boost::shared_ptr<Node> child);
+
+		/**
 		 * Get all children of this node.
 		 *
 		 * @return A vector of shared pointers to the children of this node.
 		 */
-		std::vector<boost::shared_ptr<Node> > getChildren();
+		const std::vector<boost::shared_ptr<Node> >& getChildren() const;
+
+		/**
+		 * Set the connected component represented by this node.
+		 *
+		 * @param component The connected component help by this node.
+		 */
+		void setComponent(boost::shared_ptr<ConnectedComponent> component);
 
 		/**
 		 * Get the connected component represented by this node.
@@ -164,7 +186,7 @@ public:
 	 *
 	 * @return A rectangle encapsulating all components in the tree.
 	 */
-	const util::rect<double>& getBoundingBox() const;
+	const util::box<double,2>& getBoundingBox() const;
 
 	/**
 	 * Creates a copy of the component tree, but not a copy of the involved
@@ -182,11 +204,11 @@ private:
 
 	void updateBoundingBox();
 
-	util::rect<double> updateBoundingBox(boost::shared_ptr<Node> node);
+	util::box<double,2> updateBoundingBox(boost::shared_ptr<Node> node);
 
 	boost::shared_ptr<Node> _root;
 
-	util::rect<double> _boundingBox;
+	util::box<double,2> _boundingBox;
 };
 
 #endif // IMAGEPROCESSING_COMPONENT_TREE_H__

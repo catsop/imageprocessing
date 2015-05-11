@@ -16,8 +16,6 @@ SubStackSelector::updateOutputs() {
 	if (!_subStack)
 		_subStack = new ImageStack();
 
-	_subStack->clear();
-
 	LOG_ALL(substackselectorlog)
 			<< "selecting substack from stack of size "
 			<< _stack->size() << std::endl;
@@ -26,6 +24,15 @@ SubStackSelector::updateOutputs() {
 			<< "first section is " << _firstImage
 			<< ", last section is " << _lastImage
 			<< std::endl;
+
+	if (_firstImage < 0) {
+
+		LOG_ALL(substackselectorlog)
+				<< "first section is negative, will set it to 0"
+				<< std::endl;
+
+		_firstImage = 0;
+	}
 
 	unsigned int lastImage = (_lastImage <= 0 ? _stack->size() - 1 + _lastImage : _lastImage);
 
@@ -44,6 +51,18 @@ SubStackSelector::updateOutputs() {
 		lastImage = _stack->size() - 1;
 	}
 
+	_subStack->clear();
 	for (unsigned int i = _firstImage; i <= lastImage; i++)
 		_subStack->add((*_stack)[i]);
+
+	// set the resolution of the substack
+	float resX = _stack->getResolutionX();
+	float resY = _stack->getResolutionY();
+	float resZ = _stack->getResolutionZ();
+
+	_subStack->setResolution(resX, resY, resZ);
+	_subStack->setOffset(
+			_stack->getBoundingBox().min().x(),
+			_stack->getBoundingBox().min().y(),
+			_stack->getBoundingBox().min().z() + _firstImage*resZ);
 }
