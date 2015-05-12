@@ -32,11 +32,16 @@ public:
 	 */
 	void add(const util::point<unsigned int,2>& pixel) {
 
-		// don't add more pixels than you said you would
-		assert(_next != _pixelList.end());
+		if (_next == _pixelList.end()) {
 
-		*_next = pixel;
-		_next++;
+			_pixelList.push_back(pixel);
+			_next = _pixelList.end();
+
+		} else {
+
+			*_next = pixel;
+			_next++;
+		}
 	}
 
 	/**
