@@ -65,8 +65,8 @@ ImageBlockStackReader::setup()
 {
 	if (_block.isSet() && _blockFactory.isSet())
 	{
-		int minZ = _block->min.z;
-		int maxZ = _block->max.z;
+		int minZ = _block->min().z();
+		int maxZ = _block->max().z();
 		LOG_DEBUG(imageblockstackreaderlog) << "Clear readers" << std::endl;
 		_blockReaders.clear();
 		LOG_DEBUG(imageblockstackreaderlog) << "Clear stack assembler inputs" << std::endl; 

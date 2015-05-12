@@ -53,7 +53,7 @@ ImageFileReader::readImage() {
 	else {
 
 		factor = 1.0;
-		LOG_DEBUG(imagereaderlog) << _filename << " has pixel format " << info.getPixelType() << ", will not scale values" << std::endl;
+		LOG_DEBUG(imagefilereaderlog) << _filename << " has pixel format " << info.getPixelType() << ", will not scale values" << std::endl;
 	}
 
 	vigra::transformImage(

@@ -10,7 +10,7 @@ class ImageBlockReader : public ImageReader {
 protected:
     ImageBlockReader();
 
-    pipeline::Input<util::box<unsigned int> > _block;
+    pipeline::Input<util::box<unsigned int, 3> > _block;
 
 	pipeline::Input<unsigned int> _sectionId;
     //unsigned int _sectionId;

@@ -4,8 +4,8 @@
 #include <util/point.hpp>
 
 /**
- * A list of pixel locations of known size. Adding pixels and clearing does not 
- * invalidate iterators into the list.
+ * A list of pixel locations. As long as the initially set size is not exceeded, 
+ * adding pixels and clearing does not invalidate iterators into the list.
  */
 class PixelList {
 
@@ -16,6 +16,9 @@ public:
 	typedef pixel_list_type::iterator       iterator;
 	typedef pixel_list_type::const_iterator const_iterator;
 
+	PixelList() :
+		_next(_pixelList.begin()) {}
+
 	/**
 	 * Create a new pixel list of the given size.
 	 */
@@ -24,7 +27,8 @@ public:
 		_next(_pixelList.begin()) {}
 
 	/**
-	 * Add a pixel to the pixel list. Existing iterators are not invalidated.
+	 * Add a pixel to the pixel list. Existing iterators are not invalidated, as 
+	 * long as 'size' is not exceeded.
 	 */
 	void add(const util::point<unsigned int,2>& pixel) {
 

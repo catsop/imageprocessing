@@ -21,7 +21,24 @@ public:
 	typedef pixel_list_type::iterator               iterator;
 	typedef pixel_list_type::const_iterator         const_iterator;
 
-	ConnectedComponent();
+	class PixelRange {
+
+	public:
+
+		PixelRange(
+				const_iterator begin,
+				const_iterator end) :
+			_begin(begin),
+			_end(end) {}
+
+		const_iterator begin() const { return _begin; }
+		const_iterator end()   const { return _end;   }
+
+	private:
+
+		const_iterator _begin;
+		const_iterator _end;
+	};
 
 	ConnectedComponent(
 			boost::shared_ptr<Image> source,
@@ -38,7 +55,7 @@ public:
 	/**
 	 * Get a begin and end iterator to the pixels that belong to this component.
 	 */
-	const std::pair<const_iterator, const_iterator>& getPixels() const;
+	const PixelRange& getPixels() const;
 
 	/**
 	 * Get the pixel list this component is using.
@@ -99,12 +116,8 @@ public:
 	 */
 	bool operator==(const ConnectedComponent& other) const;
 
-	std::size_t hashValue() const;
-
 private:
 
-
-	
 	// a list of pixel locations that belong to this component (can be shared
 	// between the connected components)
 	boost::shared_ptr<pixel_list_type> _pixels;
@@ -116,7 +129,7 @@ private:
 	util::box<int,2>                        _boundingBox;
 
 	// the center of mass of this component
-	mutable util::point<double>             _center;
+	mutable util::point<double, 2>          _center;
 
 	mutable bool _centerDirty;
 
@@ -125,7 +138,7 @@ private:
 
 	// the range of the pixels in _pixels that belong to this component (can
 	// be all of them, if the pixel lists are not shared)
-	std::pair<const_iterator, const_iterator> _pixelRange;
+	PixelRange _pixelRange;
 
 	// a binary map of the size of the bounding box to indicate which pixels
 	// belong to this component

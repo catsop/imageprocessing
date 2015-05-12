@@ -17,8 +17,8 @@ ImageBlockFileReader::readImage()
 	LOG_DEBUG(imageblockfilereaderlog) << "reading cropped image" << std::endl;
 	
     pipeline::Value<Image> cropped;
-	pipeline::Value<int> x(_block->min.x);
-    pipeline::Value<int> y(_block->min.y);
+	pipeline::Value<int> x(_block->min().x());
+    pipeline::Value<int> y(_block->min().y());
     pipeline::Value<int> w(_block->width());
     pipeline::Value<int> h(_block->height());
 

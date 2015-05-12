@@ -46,7 +46,7 @@ private:
 	
 	boost::shared_ptr<StackAssembler> _stackAssembler;
 	
-	pipeline::Input<util::box<unsigned int> > _block;
+	pipeline::Input<util::box<unsigned int, 3> > _block;
 	pipeline::Input<ImageBlockFactory> _blockFactory;
 };
 

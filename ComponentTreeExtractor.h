@@ -46,10 +46,10 @@ private:
 
 		// is the first range contained in the second?
 		inline bool contained(
-				const std::pair<PixelList::const_iterator, PixelList::const_iterator>& a,
-				const std::pair<PixelList::const_iterator, PixelList::const_iterator>& b) {
+				const ConnectedComponent::PixelRange& a,
+				const ConnectedComponent::PixelRange& b) {
 
-			return (a.first >= b.first && a.second <= b.second);
+			return (a.begin() >= b.begin() && a.end() <= b.end());
 		}
 
 		boost::shared_ptr<Image>     _image;
@@ -118,7 +118,7 @@ ComponentTreeExtractor<Precision>::ComponentVisitor::finalizeComponent(
 							end));
 
 	// make all open root nodes that are subsets children of this component
-	while (!_roots.empty() && contained(_roots.top()->getComponent()->getPixels(), std::make_pair(begin, end))) {
+	while (!_roots.empty() && contained(_roots.top()->getComponent()->getPixels(), ConnectedComponent::PixelRange(begin, end))) {
 
 		node->addChild(_roots.top());
 		_roots.top()->setParent(node);
