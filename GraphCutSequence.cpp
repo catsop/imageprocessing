@@ -128,7 +128,7 @@ GraphCutSequence::createSequence() {
 
 	unsigned int i = 0;
 
-	foreach (boost::shared_ptr<Image> image, *_stack) {
+	for (boost::shared_ptr<Image> image : *_stack) {
 
 		LOG_DEBUG(graphcutsequencelog) << "setting up processing pipeline of image " << i << std::endl;
 

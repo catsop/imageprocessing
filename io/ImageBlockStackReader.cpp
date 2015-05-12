@@ -39,7 +39,7 @@ ImageBlockStackReader::StackAssembler::updateOutputs() {
 	LOG_DEBUG(imageblockstackreaderlog) << "Stack Assembler updating outputs" << std::endl;
 	_stack->clear();
 
-	foreach (boost::shared_ptr<Image> image, _images)
+	for (boost::shared_ptr<Image> image : _images)
 		_stack->add(image);
 }
 

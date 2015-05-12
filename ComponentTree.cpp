@@ -91,7 +91,7 @@ ComponentTree::count(boost::shared_ptr<ComponentTree::Node> node) const {
 
 	int numNodes = 0;
 
-	foreach (boost::shared_ptr<ComponentTree::Node> child, node->getChildren())
+	for (boost::shared_ptr<ComponentTree::Node> child : node->getChildren())
 		numNodes += count(child);
 
 	numNodes++;
@@ -128,7 +128,7 @@ ComponentTree::clone(boost::shared_ptr<ComponentTree::Node> node) {
 
 	boost::shared_ptr<ComponentTree::Node> nodeClone = boost::make_shared<ComponentTree::Node>(node->getComponent());
 
-	foreach (boost::shared_ptr<ComponentTree::Node> child, node->getChildren()) {
+	for (boost::shared_ptr<ComponentTree::Node> child : node->getChildren()) {
 
 		boost::shared_ptr<ComponentTree::Node> childClone = clone(child);
 
@@ -149,7 +149,7 @@ ComponentTree::updateBoundingBox(boost::shared_ptr<ComponentTree::Node> node) {
 
 	util::box<double,2> boundingBox = node->getComponent()->getBoundingBox();
 
-	foreach (boost::shared_ptr<ComponentTree::Node> child, node->getChildren()) {
+	for (boost::shared_ptr<ComponentTree::Node> child : node->getChildren()) {
 
 		util::box<double,2> childBoundingBox = updateBoundingBox(child);
 

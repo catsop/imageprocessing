@@ -29,7 +29,7 @@ ComponentTreeDownSampler::downsample() {
 
 	// downsample the trees under every child of the root node and add them to 
 	// the cloned root node
-	foreach (boost::shared_ptr<ComponentTree::Node> child, rootNode->getChildren()) {
+	for (boost::shared_ptr<ComponentTree::Node> child : rootNode->getChildren()) {
 
 		boost::shared_ptr<ComponentTree::Node> childClone = downsample(child);
 
@@ -51,7 +51,7 @@ ComponentTreeDownSampler::downsample(boost::shared_ptr<ComponentTree::Node> node
 		node = node->getChildren().front();
 
 	// downsample the trees under every child and add them to the clone
-	foreach (boost::shared_ptr<ComponentTree::Node> child, node->getChildren()) {
+	for (boost::shared_ptr<ComponentTree::Node> child : node->getChildren()) {
 
 		boost::shared_ptr<ComponentTree::Node> childClone = downsample(child);
 

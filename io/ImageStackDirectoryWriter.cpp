@@ -61,7 +61,7 @@ ImageStackDirectoryWriter::write(std::string basename) {
 
 	unsigned int i = 0;
 
-	foreach (boost::shared_ptr<Image> image, *_stack) {
+	for (boost::shared_ptr<Image> image : *_stack) {
 
 		std::stringstream number;
 		number << std::setw(8) << std::setfill('0');

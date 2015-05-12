@@ -37,7 +37,7 @@ ImageStackDirectoryReader::ImageStackDirectoryReader(const std::string& director
 	LOG_DEBUG(imagestackdirectoryreaderlog) << "directory contains " << files.size() << " entries" << std::endl;
 
 	// for every image file in the given directory
-	foreach (boost::filesystem::path file, files) {
+	for (boost::filesystem::path file : files) {
 
 		if (file.filename() == "META") {
 
@@ -104,7 +104,7 @@ ImageStackDirectoryReader::StackAssembler::updateOutputs() {
 
 	_stack->clear();
 
-	foreach (boost::shared_ptr<Image> image, _images)
+	for (boost::shared_ptr<Image> image : _images)
 		_stack->add(image);
 
 	_stack->setResolution(_resX, _resY, _resZ);

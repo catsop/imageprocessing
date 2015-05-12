@@ -169,7 +169,7 @@ public:
 
 		visitor.visitNode(node);
 
-		foreach (boost::shared_ptr<Node> child, node->getChildren()) {
+		for (boost::shared_ptr<Node> child : node->getChildren()) {
 
 			visitor.visitEdge(node, child);
 
