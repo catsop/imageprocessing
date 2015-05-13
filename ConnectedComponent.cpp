@@ -1,3 +1,8 @@
+#ifdef __SSE4_1__
+#include <emmintrin.h> // SSE 2
+#include <smmintrin.h> // SSE 4.1
+#endif // __SSE4_1__
+
 #include <boost/make_shared.hpp>
 
 #include <imageprocessing/exceptions.h>
@@ -19,6 +24,101 @@ ConnectedComponent::ConnectedComponent(
 	_pixelRange(begin, end),
 	_bitmapDirty(true) {
 
+#ifdef __SSE4_1__
+
+	// if there is at least one pixel
+	if (begin != end) {
+
+		unsigned int minX = begin->x();
+		unsigned int maxX = begin->x();
+		unsigned int minY = begin->y();
+		unsigned int maxY = begin->y();
+
+		unsigned int*__restrict__ pixels = (unsigned int*)&*begin;
+		unsigned int*__restrict__ pixelsEnd = (unsigned int*)&*end;
+
+		// Iterate through pixelList until 16-byte alignment is reached.
+		while (((std::uintptr_t) pixels % 16) != 0) {
+
+			unsigned int x = *pixels;
+			unsigned int y = *(pixels + 1);
+
+			if (x < minX)
+				minX = x;
+			else if (x > maxX)
+				maxX = x;
+
+			if (y < minY)
+				minY = y;
+			else if (y > maxY)
+				maxY = y;
+
+			pixels += 2;
+		}
+
+		// Prepare aligned, packed integer values.
+		__attribute__((aligned(16))) unsigned int minReadin[4] = {minX, minY, minX, minY};
+		__attribute__((aligned(16))) unsigned int maxReadin[4] = {maxX, maxY, maxX, maxY};
+
+		// Guaranteed to have at least 8 XMM registers, so use 4 for cumulative
+		// values and 2 for vector values. (Using 8+4 of 16 registers on 64-bit
+		// arch yields no performance improvement.)
+		__m128i mins1 = _mm_load_si128((__m128i*)minReadin);
+		__m128i maxs1 = _mm_load_si128((__m128i*)maxReadin);
+		__m128i mins2 = mins1;
+		__m128i maxs2 = maxs1;
+
+		// Vectorized loop. Strides two packed integer vectors, each containing
+		// both X and Y for two pixels.
+		while (pixels < pixelsEnd - 8) {
+
+			__m128i pixelPair1 = _mm_load_si128((__m128i*)pixels);
+			__m128i pixelPair2 = _mm_load_si128((__m128i*)(pixels + 4));
+			pixels += 8; // Hint compiler to iterate while loads stall.
+			_mm_prefetch(pixels, _MM_HINT_T0);
+			mins1 = _mm_min_epu32(mins1, pixelPair1);
+			maxs1 = _mm_max_epu32(maxs1, pixelPair1);
+			mins2 = _mm_min_epu32(mins2, pixelPair2);
+			maxs2 = _mm_max_epu32(maxs2, pixelPair2);
+		}
+
+		// Combine stride results.
+		mins1 = _mm_min_epu32(mins1, mins2);
+		maxs1 = _mm_max_epu32(maxs1, maxs2);
+
+		// Iterate through any remaining pixels.
+		while (pixels < pixelsEnd) {
+
+			unsigned int x = *pixels;
+			unsigned int y = *(pixels + 1);
+
+			if (x < minX)
+				minX = x;
+			else if (x > maxX)
+				maxX = x;
+
+			if (y < minY)
+				minY = y;
+			else if (y > maxY)
+				maxY = y;
+
+			pixels += 2;
+		}
+
+		// Readout packed vectors, compare with remaining results, and store.
+		__attribute__((aligned(16))) unsigned int minReadout[4];
+		__attribute__((aligned(16))) unsigned int maxReadout[4];
+		_mm_store_si128((__m128i*)minReadout, mins1);
+		_mm_store_si128((__m128i*)maxReadout, maxs1);
+
+		_boundingBox.min().x() = (int)std::min(minX, std::min(minReadout[0], minReadout[2]));
+		_boundingBox.max().x() = (int)std::max(maxX, std::max(maxReadout[0], maxReadout[2])) + 1;
+		_boundingBox.min().y() = (int)std::min(minY, std::min(minReadout[1], minReadout[3]));
+		_boundingBox.max().y() = (int)std::max(maxY, std::max(maxReadout[1], maxReadout[3])) + 1;
+	}
+
+#else // __SSE4_1__
+
 	// if there is at least one pixel
 	if (begin != end) {
 
@@ -35,6 +135,8 @@ ConnectedComponent::ConnectedComponent(
 		_boundingBox.min().y() = std::min(_boundingBox.min().y(), (int)pixel.y());
 		_boundingBox.max().y() = std::max(_boundingBox.max().y(), (int)pixel.y() + 1);
 	}
+
+#endif // __SSE4_1__
 }
 
 double
