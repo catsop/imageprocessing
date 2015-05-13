@@ -130,7 +130,7 @@ ConnectedComponent::intersect(const ConnectedComponent& other) {
 
 	// find the intersection pixels
 	std::vector<util::point<unsigned int,2> > intersectionPixels;
-	bitmap_type::size_type size = _bitmap.shape();
+	bitmap_type::size_type size = getBitmap().shape();
 	for(const util::point<unsigned int, 2>& pixel : other.getPixels())
 		if (_boundingBox.contains(pixel)) {
 
