@@ -16,15 +16,15 @@ public:
 	typedef pixel_list_type::iterator       iterator;
 	typedef pixel_list_type::const_iterator const_iterator;
 
-	PixelList() :
-		_next(_pixelList.begin()) {}
+	PixelList() {}
 
 	/**
 	 * Create a new pixel list of the given size.
 	 */
-	PixelList(size_t size) :
-		_pixelList(size),
-		_next(_pixelList.begin()) {}
+	PixelList(size_t size) {
+
+		_pixelList.reserve(size);
+	}
 
 	/**
 	 * Add a pixel to the pixel list. Existing iterators are not invalidated, as 
@@ -32,43 +32,26 @@ public:
 	 */
 	void add(const util::point<unsigned int,2>& pixel) {
 
-		if (_next == _pixelList.end()) {
-
-			_pixelList.push_back(pixel);
-			_next = _pixelList.end();
-
-		} else {
-
-			*_next = pixel;
-			_next++;
-		}
+		_pixelList.push_back(pixel);
 	}
-
-	/**
-	 * Clear the pixel list. Existing iterators are not invalidated.
-	 */
-	void clear() { _next = _pixelList.begin(); }
 
 	/**
 	 * Iterator access.
 	 */
 	iterator       begin() { return _pixelList.begin(); }
 	const_iterator begin() const { return _pixelList.begin(); }
-	iterator       end() { return _next; }
-	const_iterator end() const { return _next; }
+	iterator       end() { return _pixelList.end(); }
+	const_iterator end() const { return _pixelList.end(); }
 
 	/**
 	 * The number of pixels that have been added to this pixel list.
 	 */
-	size_t size() const { return (_next - _pixelList.begin()); }
+	size_t size() const { return _pixelList.size(); }
 
 private:
 
 	// a non-resizing vector of pixel locations
 	pixel_list_type _pixelList;
-
-	// the next free position in the pixel list
-	iterator _next;
 };
 
 #endif // IMAGEPROCESSING_PIXEL_LIST_H__
