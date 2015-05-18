@@ -47,6 +47,13 @@ public:
 			pixel_list_type::const_iterator begin,
 			pixel_list_type::const_iterator end);
 
+	ConnectedComponent(
+			boost::shared_ptr<Image> source,
+			double value,
+			const util::point<int,2>& offset,
+			const bitmap_type& bitmap,
+			const size_t size);
+
 	/**
 	 * Get the intensity value that was assigned to this component.
 	 */

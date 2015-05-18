@@ -133,6 +133,31 @@ ConnectedComponent::ConnectedComponent(
 #endif // __SSE4_1__
 }
 
+ConnectedComponent::ConnectedComponent(
+		boost::shared_ptr<Image> source,
+		double value,
+		const util::point<int,2>& offset,
+		const bitmap_type& bitmap,
+		const size_t size) :
+
+	_pixels(boost::make_shared<pixel_list_type>(size)),
+	_value(value),
+	_boundingBox(offset.x(), offset.y(), offset.x() + bitmap.width(), offset.y() + bitmap.height()),
+	_center(0, 0),
+	_centerDirty(true),
+	_source(source),
+	_pixelRange(_pixels->begin(), _pixels->end()),
+	_bitmap(bitmap),
+	_bitmapDirty(false) {
+
+	for (unsigned int x = 0; x < static_cast<unsigned int>(bitmap.width()); x++)
+		for (unsigned int y = 0; y < static_cast<unsigned int>(bitmap.height()); y++)
+			if (bitmap(x, y))
+				_pixels->add(util::point<unsigned int, 2>(offset.x() + x, offset.y() + y));
+
+	_pixelRange = PixelRange(_pixels->begin(), _pixels->end());
+}
+
 double
 ConnectedComponent::getValue() const {
 
