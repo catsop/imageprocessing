@@ -9,7 +9,7 @@ struct ComponentTreeExtractorParameters : public pipeline::Data {
 	ComponentTreeExtractorParameters() :
 		darkToBright(true),
 		minSize(0),
-		maxSize(std::numeric_limits<std::size_t>::max()),
+		maxSize(std::numeric_limits<unsigned int>::max()),
 		minIntensity(0),
 		maxIntensity(0),
 		sameIntensityComponents(false),
