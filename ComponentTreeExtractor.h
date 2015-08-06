@@ -94,7 +94,7 @@ ComponentTreeExtractor<Precision>::ComponentVisitor::finalizeComponent(
 	if (!changed)
 		return;
 
-	size_t size = end - begin;
+	PixelList::const_iterator::difference_type size = end - begin;
 
 	bool wholeImage = (size == (_spacedEdgeImage ? _image->size() / 4 : _image->size()));
 	bool validSize  = (size >= _minSize && (_maxSize == 0 || size < _maxSize));
