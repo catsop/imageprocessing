@@ -80,6 +80,11 @@ public:
 	const util::point<double,2>& getCenter() const;
 
 	/**
+	 * Get a pixel location near the interior and centroid of this component.
+	 */
+	const util::point<int,2> getInteriorPoint(float centroidBias = 0.5) const;
+
+	/**
 	 * Get the bounding box of this component.
 	 */
 	const util::box<int,2>& getBoundingBox() const;

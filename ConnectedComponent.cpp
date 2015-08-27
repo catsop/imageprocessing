@@ -4,8 +4,10 @@
 #endif // __SSE4_1__
 
 #include <boost/make_shared.hpp>
+#include <vigra/distancetransform.hxx>
 
 #include <imageprocessing/exceptions.h>
+#include <util/geometry.hpp>
 #include "ConnectedComponent.h"
 
 ConnectedComponent::ConnectedComponent(
@@ -181,6 +183,33 @@ ConnectedComponent::getCenter() const {
 	}
 
 	return _center;
+}
+
+const util::point<int, 2>
+ConnectedComponent::getInteriorPoint(float centroidBias) const {
+
+	const bitmap_type& thisBitmap = getBitmap();
+	const util::point<float, 2> centroid = getCenter() - _boundingBox.min();
+	vigra::MultiArray<2, float> interiorDistance(thisBitmap.shape());
+
+	vigra::distanceTransform(thisBitmap, interiorDistance, true, 2);
+	float bestDist = -std::numeric_limits<float>::infinity();
+	util::point<unsigned int, 2> bestPoint;
+
+	for (unsigned int x = 0; x < thisBitmap.width(); x++)
+		for (unsigned int y = 0; y < thisBitmap.height(); y++)
+			if (interiorDistance(x, y)) {
+				util::point<unsigned int, 2> pixel(x, y);
+				// Find a pixel optimizing between the centroid and medial axis.
+				// The linear combination is an arbitrary objective.
+				float score = interiorDistance(x, y) - centroidBias * util::length(pixel - centroid);
+				if (score > bestDist) {
+					bestDist = score;
+					bestPoint = pixel;
+				}
+			}
+
+	return bestPoint + _boundingBox.min();
 }
 
 const ConnectedComponent::PixelRange&
