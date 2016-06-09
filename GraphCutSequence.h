@@ -24,6 +24,7 @@ private:
 	float _stepForegroundPrior;
 };
 
+template <typename ImageType>
 class ImageAverager : public pipeline::SimpleProcessNode<> {
 
 public:
@@ -36,13 +37,14 @@ private:
 
 	void updateOutputs();
 
-	pipeline::Input<Image>  _image;
+	pipeline::Input<ImageType>  _image;
 
-	pipeline::Output<Image> _average;
+	pipeline::Output<ImageType> _average;
 
 	unsigned int _numImages;
 };
 
+template <typename ImageType>
 class GraphCutSequence : public pipeline::SimpleProcessNode<> {
 
 public:
@@ -55,7 +57,7 @@ private:
 
 	void updateOutputs();
 
-	pipeline::Input<ImageStack> _stack;
+	pipeline::Input<ImageStack<ImageType> > _stack;
 };
 
 #endif // IMAGEPROCESSING_GRAPH_CUT_SEQUENCE_H__

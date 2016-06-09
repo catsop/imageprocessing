@@ -11,7 +11,6 @@
 #include "ConnectedComponent.h"
 
 ConnectedComponent::ConnectedComponent(
-		boost::shared_ptr<Image> source,
 		double value,
 		boost::shared_ptr<pixel_list_type> pixelList,
 		pixel_list_type::const_iterator begin,
@@ -22,7 +21,6 @@ ConnectedComponent::ConnectedComponent(
 	_boundingBox(0, 0, 0, 0),
 	_center(0, 0),
 	_centerDirty(true),
-	_source(source),
 	_pixelRange(begin, end),
 	_bitmapDirty(true) {
 
@@ -136,7 +134,6 @@ ConnectedComponent::ConnectedComponent(
 }
 
 ConnectedComponent::ConnectedComponent(
-		boost::shared_ptr<Image> source,
 		double value,
 		const util::point<int,2>& offset,
 		const bitmap_type& bitmap,
@@ -147,7 +144,6 @@ ConnectedComponent::ConnectedComponent(
 	_boundingBox(offset.x(), offset.y(), offset.x() + bitmap.width(), offset.y() + bitmap.height()),
 	_center(0, 0),
 	_centerDirty(true),
-	_source(source),
 	_pixelRange(_pixels->begin(), _pixels->end()),
 	_bitmap(bitmap),
 	_bitmapDirty(false) {
@@ -268,7 +264,7 @@ ConnectedComponent::translate(const util::point<int,2>& pt)
 		translation->add(pixel + pt);
 	}
 	
-	return ConnectedComponent(_source, _value, translation, translation->begin(), translation->end());
+	return ConnectedComponent(_value, translation, translation->begin(), translation->end());
 }
 
 
@@ -294,7 +290,7 @@ ConnectedComponent::intersect(const ConnectedComponent& other) {
 				intersection->add(pixel);
 		}
 
-	return ConnectedComponent(_source, _value, intersection, intersection->begin(), intersection->end());
+	return ConnectedComponent(_value, intersection, intersection->begin(), intersection->end());
 }
 
 bool ConnectedComponent::intersects(const ConnectedComponent& other)

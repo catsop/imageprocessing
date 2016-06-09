@@ -5,10 +5,15 @@
 #include <util/box.hpp>
 #include <pipeline/all.h>
 
-class ImageBlockReader : public ImageReader {
+template <typename ImageType>
+class ImageBlockReader : public ImageReader<ImageType> {
 
 protected:
     ImageBlockReader();
+
+    using ImageBlockReader::ImageReader::registerInput;
+
+    using ImageBlockReader::ImageReader::_image;
 
     pipeline::Input<util::box<unsigned int, 3> > _block;
 

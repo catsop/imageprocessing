@@ -5,18 +5,19 @@
 #include "Image.h"
 #include "DiscreteVolume.h"
 
+template <typename ImageType>
 class ImageStack : public pipeline::Data, public DiscreteVolume {
 
 	// Image objects are shared between ImageStack
-	typedef std::vector<boost::shared_ptr<Image> > sections_type;
+	typedef std::vector<boost::shared_ptr<ImageType> > sections_type;
 
 public:
 
-	typedef Image::value_type               value_type;
+	typedef typename ImageType::value_type         value_type;
 
-	typedef sections_type::iterator         iterator;
+	typedef typename sections_type::iterator       iterator;
 
-	typedef sections_type::const_iterator   const_iterator;
+	typedef typename sections_type::const_iterator const_iterator;
 
 	/**
 	 * Remove all sections.
@@ -26,12 +27,12 @@ public:
 	/**
 	 * Add a single section to this set of sections.
 	 */
-	void add(boost::shared_ptr<Image> section);
+	void add(boost::shared_ptr<ImageType> section);
 
 	/**
 	 * Add a set of sections to this set of sections.
 	 */
-	void addAll(boost::shared_ptr<ImageStack> stack);
+	void addAll(boost::shared_ptr<ImageStack<ImageType> > stack);
 
 	const const_iterator begin() const { return _sections.begin(); }
 
@@ -41,9 +42,9 @@ public:
 
 	iterator end() { return _sections.end(); }
 
-	boost::shared_ptr<Image> operator[](unsigned int i) { return _sections[i]; }
+	boost::shared_ptr<ImageType> operator[](unsigned int i) { return _sections[i]; }
 
-	boost::shared_ptr<const Image> operator[](unsigned int i) const { return _sections[i]; }
+	boost::shared_ptr<const ImageType> operator[](unsigned int i) const { return _sections[i]; }
 
 	unsigned int size() const { return _sections.size(); }
 

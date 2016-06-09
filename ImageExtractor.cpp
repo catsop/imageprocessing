@@ -6,15 +6,17 @@
 
 static logger::LogChannel imageextractorlog("imageextractorlog", "[ImageExtractor] ");
 
-ImageExtractor::ImageExtractor() {
+template <typename ImageType>
+ImageExtractor<ImageType>::ImageExtractor() {
 
 	registerInput(_stack, "stack");
 
 	_stack.registerCallback(&ImageExtractor::onInputSet, this);
 }
 
+template <typename ImageType>
 void
-ImageExtractor::onInputSet(const pipeline::InputSetBase&) {
+ImageExtractor<ImageType>::onInputSet(const pipeline::InputSetBase&) {
 
 	LOG_ALL(imageextractorlog) << "input image stack set" << std::endl;
 
@@ -37,14 +39,18 @@ ImageExtractor::onInputSet(const pipeline::InputSetBase&) {
 	}
 }
 
+template <typename ImageType>
 void
-ImageExtractor::updateOutputs() {
+ImageExtractor<ImageType>::updateOutputs() {
 
 	// there is nothing to do here
 }
 
+template <typename ImageType>
 unsigned int
-ImageExtractor::getNumImages() {
+ImageExtractor<ImageType>::getNumImages() {
 
 	return _images.size();
 }
+
+template class ImageExtractor<IntensityImage>;

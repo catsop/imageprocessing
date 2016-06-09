@@ -2,8 +2,9 @@
 
 #include "MaskImage.h"
 
-MaskImage::MaskImage(float maskValue) :
-		_masked(new Image()),
+template <typename ImageType>
+MaskImage<ImageType>::MaskImage(float maskValue) :
+		_masked(new ImageType()),
 		_maskValue(maskValue) {
 
 	registerInput(_image, "image");
@@ -11,8 +12,9 @@ MaskImage::MaskImage(float maskValue) :
 	registerOutput(_masked, "masked");
 }
 
+template <typename ImageType>
 void
-MaskImage::updateOutputs() {
+MaskImage<ImageType>::updateOutputs() {
 
 	int width  = _image->width();
 	int height = _image->height();

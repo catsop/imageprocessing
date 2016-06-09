@@ -7,7 +7,8 @@
 
 logger::LogChannel imagestackdirectoryreaderlog("imagestackdirectoryreaderlog", "[ImageStackDirectoryReader] ");
 
-ImageStackDirectoryReader::ImageStackDirectoryReader(const std::string& directory) :
+template <typename ImageType>
+ImageStackDirectoryReader<ImageType>::ImageStackDirectoryReader(const std::string& directory) :
 	_stackAssembler(boost::make_shared<StackAssembler>()),
 	_directory(directory) {
 
@@ -50,7 +51,7 @@ ImageStackDirectoryReader::ImageStackDirectoryReader(const std::string& director
 			LOG_DEBUG(imagestackdirectoryreaderlog) << "creating reader for " << file << std::endl;
 
 			// add an input to the stack assembler
-			boost::shared_ptr<ImageFileReader> reader = boost::make_shared<ImageFileReader>(file.string());
+			boost::shared_ptr<ImageFileReader<ImageType> > reader = boost::make_shared<ImageFileReader<ImageType> >(file.string());
 
 			_stackAssembler->addInput(reader->getOutput());
 		}
@@ -60,8 +61,9 @@ ImageStackDirectoryReader::ImageStackDirectoryReader(const std::string& director
 	registerOutput(_stackAssembler->getOutput(), "stack");
 }
 
+template <typename ImageType>
 void
-ImageStackDirectoryReader::processMetaData(boost::filesystem::path file) {
+ImageStackDirectoryReader<ImageType>::processMetaData(boost::filesystem::path file) {
 
 	boost::program_options::options_description desc("image stack directory META options");
 
@@ -89,8 +91,9 @@ ImageStackDirectoryReader::processMetaData(boost::filesystem::path file) {
 	_stackAssembler->setResolution(resX, resY, resZ);
 }
 
-ImageStackDirectoryReader::StackAssembler::StackAssembler() :
-	_stack(new ImageStack()),
+template <typename ImageType>
+ImageStackDirectoryReader<ImageType>::StackAssembler::StackAssembler() :
+	_stack(new ImageStack<ImageType>()),
 	_resX(1.0),
 	_resY(1.0),
 	_resZ(1.0) {
@@ -99,13 +102,16 @@ ImageStackDirectoryReader::StackAssembler::StackAssembler() :
 	registerOutput(_stack, "stack");
 }
 
+template <typename ImageType>
 void
-ImageStackDirectoryReader::StackAssembler::updateOutputs() {
+ImageStackDirectoryReader<ImageType>::StackAssembler::updateOutputs() {
 
 	_stack->clear();
 
-	for (boost::shared_ptr<Image> image : _images)
+	for (boost::shared_ptr<ImageType> image : _images)
 		_stack->add(image);
 
 	_stack->setResolution(_resX, _resY, _resZ);
 }
+
+template class ImageStackDirectoryReader<IntensityImage>;

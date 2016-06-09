@@ -5,6 +5,7 @@
 #include <signals/Slot.h>
 #include <imageprocessing/Image.h>
 
+template <typename ImageType>
 class ImageWriter : public pipeline::SimpleProcessNode<> {
 
 public:
@@ -21,7 +22,7 @@ private:
 	void updateOutputs() {};
 
 	// the input image
-	pipeline::Input<Image> _image;
+	pipeline::Input<ImageType> _image;
 
 	// the name of the file to write to
 	std::string _filename;

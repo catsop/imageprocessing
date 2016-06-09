@@ -12,6 +12,7 @@
 #include <imageprocessing/io/ImageBlockFactory.h>
 #include <util/box.hpp>
 
+template <typename ImageType>
 class ImageBlockStackReader : public pipeline::ProcessNode
 {
 public:
@@ -30,9 +31,9 @@ private:
 
 		void updateOutputs();
 
-		pipeline::Inputs<Image> _images;
+		pipeline::Inputs<ImageType> _images;
 
-		pipeline::Output<ImageStack> _stack;
+		pipeline::Output<ImageStack<ImageType> > _stack;
 	};
 
 	//void updateOutputs();
@@ -42,12 +43,12 @@ private:
 
 	void setup();
 	
-	std::vector<boost::shared_ptr<ImageBlockReader> > _blockReaders;
+	std::vector<boost::shared_ptr<ImageBlockReader<ImageType> > > _blockReaders;
 	
 	boost::shared_ptr<StackAssembler> _stackAssembler;
 	
 	pipeline::Input<util::box<unsigned int, 3> > _block;
-	pipeline::Input<ImageBlockFactory> _blockFactory;
+	pipeline::Input<ImageBlockFactory<ImageType> > _blockFactory;
 };
 
 #endif //IMAGE_BLOCK_STACK_READER_H__

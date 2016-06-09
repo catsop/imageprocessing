@@ -6,6 +6,7 @@
 #include <pipeline/all.h>
 #include "Image.h"
 
+template <typename ImageType>
 class ImageCrop : public pipeline::SimpleProcessNode<> {
 
 public:
@@ -25,23 +26,23 @@ private:
 
 	void updateOutputs() {
 
-		_cropped = new Image(*_width, *_height);
+		_cropped = new ImageType(*_width, *_height);
 
-		Image::difference_type upperLeft(*_x, *_y);
-		Image::difference_type lowerRight(*_x + *_width, *_y + *_height);
+		typename ImageType::difference_type upperLeft(*_x, *_y);
+		typename ImageType::difference_type lowerRight(*_x + *_width, *_y + *_height);
 
 		vigra::copyMultiArray(
 				srcMultiArrayRange(_image->subarray(upperLeft, lowerRight)),
 				destMultiArrayRange(*_cropped));
 	}
 
-	pipeline::Input<Image> _image;
+	pipeline::Input<ImageType> _image;
 	pipeline::Input<int>   _x;
 	pipeline::Input<int>   _y;
 	pipeline::Input<int>   _width;
 	pipeline::Input<int>   _height;
 
-	pipeline::Output<Image> _cropped;
+	pipeline::Output<ImageType> _cropped;
 };
 
 #endif // IMAGEPROCESSING_IMAGE_CROP_H__

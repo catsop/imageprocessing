@@ -6,7 +6,7 @@
 logger::LogChannel graphcutlog("graphcutlog", "[GraphCut] ");
 
 GraphCut::GraphCut() :
-		_segmentation(new Image()),
+		_segmentation(new BinaryImage()),
 		_energy(new double(0)),
 		_graph(0, 0),
 		_imageChanged(true),
@@ -261,11 +261,11 @@ void GraphCut::getSegmentation(){
 
 			if(_graph.what_segment(nodeId) == graph_type::SOURCE){
 
-				(*_segmentation)(x, y) = 0;
+				(*_segmentation)(x, y) = false;
 
 			} else {
 
-				(*_segmentation)(x, y) = 1;
+				(*_segmentation)(x, y) = true;
 			}
 		}
 	}

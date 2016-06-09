@@ -5,15 +5,17 @@
 
 logger::LogChannel imagehttpreaderlog("imagehttpreaderlog", "[ImageHttpReader] ");
 
-ImageHttpReader::ImageHttpReader(std::string url, const HttpClient& client) :
+template <typename ImageType>
+ImageHttpReader<ImageType>::ImageHttpReader(std::string url, const HttpClient& client) :
     _url(url),
     _client(client)
 {
 
 }
 
+template <typename ImageType>
 void
-ImageHttpReader::readImage()
+ImageHttpReader<ImageType>::readImage()
 {
     LOG_DEBUG(imagehttpreaderlog) << "Will attempt to read image from " << _url << std::endl;
 
@@ -53,7 +55,7 @@ ImageHttpReader::readImage()
     int w = image.columns(), h = image.rows();
 
 	// allocate output image
-	_image = new Image(w, h);
+	_image = new ImageType(w, h);
 
     LOG_DEBUG(imagehttpreaderlog) << "Image is size " << w << " by " << h << std::endl;
 
@@ -68,3 +70,5 @@ ImageHttpReader::readImage()
         (*_image)[i] = (float)dval;
     }
 }
+
+template class ImageHttpReader<IntensityImage>;

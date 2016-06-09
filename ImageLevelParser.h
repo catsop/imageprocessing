@@ -83,7 +83,7 @@ public:
 		 * @param value
 		 *              The threshold value of the new child.
 		 */
-		void newChildComponent(Image::value_type /*value*/) {}
+		void newChildComponent(IntensityImage::value_type /*value*/) {}
 
 		/**
 		 * Set the pixel list that contains the pixel locations of each 
@@ -108,7 +108,7 @@ public:
 		 *              the current component.
 		 */
 		void finalizeComponent(
-				Image::value_type            value,
+				IntensityImage::value_type   value,
 				PixelList::const_iterator    begin,
 				PixelList::const_iterator    end) {}
 	};
@@ -117,7 +117,7 @@ public:
 	 * Create a new image level parser for the given image with the given 
 	 * parameters.
 	 */
-	ImageLevelParser(const Image& image, const Parameters& parameters = Parameters());
+	ImageLevelParser(const IntensityImage& image, const Parameters& parameters = Parameters());
 
 	/**
 	 * Parse the image. The provided visitor has to implement the interface of 
@@ -270,7 +270,7 @@ private:
 	/**
 	 * Discretized the input image into the range defined by Precision.
 	 */
-	void discretizeImage(const Image& image);
+	void discretizeImage(const IntensityImage& image);
 
 	/**
 	 * Get the orignal value that corresponds to the given discretized value.
@@ -327,7 +327,7 @@ template <typename Precision>
 const typename ImageLevelParser<Precision>::Direction ImageLevelParser<Precision>::Up    = 3;
 
 template <typename Precision>
-ImageLevelParser<Precision>::ImageLevelParser(const Image& image, const Parameters& parameters) :
+ImageLevelParser<Precision>::ImageLevelParser(const IntensityImage& image, const Parameters& parameters) :
 	_parameters(parameters),
 	_pixelList(boost::make_shared<PixelList>(image.size())),
 	_boundaryLocations(MaxValue + 1),
@@ -824,7 +824,7 @@ ImageLevelParser<Precision>::findNeighbor(
 
 template <typename Precision>
 void
-ImageLevelParser<Precision>::discretizeImage(const Image& image) {
+ImageLevelParser<Precision>::discretizeImage(const IntensityImage& image) {
 
 	_image.reshape(image.shape());
 

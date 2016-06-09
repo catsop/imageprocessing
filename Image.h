@@ -1,27 +1,30 @@
 #ifndef IMAGE_H__
 #define IMAGE_H__
 
+#include <cstdint>
+
 #include <vigra/multi_array.hxx>
 
 #include <pipeline/Data.h>
 #include "DiscreteVolume.h"
 
-typedef vigra::MultiArray<2, float> array_type;
-
 /**
  * A vigra-compatible image class.
  */
-class Image : public pipeline::Data, public DiscreteVolume, public array_type {
+template <typename T = float>
+class Image : public pipeline::Data, public DiscreteVolume, public vigra::MultiArray<2, T> {
 
 public:
 
+	typedef vigra::MultiArray<2, T> array_type;
+
 	Image(std::string identifier = std::string()) : _identifier(identifier) {};
 
-	Image(size_t width, size_t height, float initialValue = 0.0f, std::string identifier = std::string()) :
-		array_type(array_type::difference_type(width, height)),
+	Image(size_t width, size_t height, T initialValue = 0.0f, std::string identifier = std::string()) :
+		array_type(typename array_type::difference_type(width, height)),
 		_identifier(identifier) {
 
-		init(initialValue);
+		array_type::init(initialValue);
 	}
 
 	using array_type::operator=;
@@ -29,12 +32,12 @@ public:
 	/**
 	 * The width of the image.
 	 */
-	array_type::difference_type_1 width() const { return size(0); }
+	typename array_type::difference_type_1 width() const { return array_type::size(0); }
 
 	/**
 	 * The height of the image.
 	 */
-	array_type::difference_type_1 height() const { return size(1); }
+	typename array_type::difference_type_1 height() const { return array_type::size(1); }
 
 	/**
 	 * Reshape the image.
@@ -46,7 +49,7 @@ public:
 	 */
 	void reshape(size_t width, size_t height) {
 
-		reshape(array_type::difference_type(width, height));
+		reshape(typename array_type::difference_type(width, height));
 	}
 
 	const std::string& getIdentifier() {
@@ -63,12 +66,16 @@ protected:
 
 	util::box<unsigned int,3> computeDiscreteBoundingBox() const override {
 
-		return util::box<unsigned int,3>(0, 0, 0, size(0), size(1), 1);
+		return util::box<unsigned int,3>(0, 0, 0, array_type::size(0), array_type::size(1), 1);
 	}
 
 private:
 
 	std::string _identifier;
 };
+
+typedef Image<bool> BinaryImage;
+typedef Image<float> IntensityImage;
+typedef Image<uint64_t> LabelImage;
 
 #endif // IMAGE_H__

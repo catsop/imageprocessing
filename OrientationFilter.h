@@ -11,6 +11,7 @@
  * highest value of the i-th equally sized interval in the range [0, 1].  
  * Orientation 0 is vertical, subsequent orientations follow clock-wise.
  */
+template <typename ImageType>
 class OrientationFilter : public pipeline::SimpleProcessNode<> {
 
 public:
@@ -32,8 +33,8 @@ private:
 	void updateOutputs();
 
 	pipeline::Input<double> _scale;
-	pipeline::Input<Image>  _image;
-	pipeline::Output<Image> _orientations;
+	pipeline::Input<ImageType>  _image;
+	pipeline::Output<Image<float> > _orientations;
 
 	int _numOrientations;
 

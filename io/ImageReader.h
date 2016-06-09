@@ -4,6 +4,7 @@
 #include <pipeline/all.h>
 #include <imageprocessing/Image.h>
 
+template <typename ImageType>
 class ImageReader : public pipeline::SimpleProcessNode<> {
 
 
@@ -16,7 +17,7 @@ protected:
 	virtual void readImage() = 0;
 
 	// the output image
-	pipeline::Output<Image> _image;
+	pipeline::Output<ImageType> _image;
 	
 
 private:

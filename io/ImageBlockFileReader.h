@@ -10,24 +10,27 @@
 
 #include "ImageFileReader.h"
 
-class ImageBlockFileReader : public ImageBlockReader
-{
+template <typename ImageType>
+class ImageBlockFileReader : public ImageBlockReader<ImageType> {
 public:
     ImageBlockFileReader(const std::string filename);
 
 protected:
     void readImage();
+
+    using ImageBlockFileReader::ImageBlockReader::_block;
+    using ImageBlockFileReader::ImageBlockReader::_image;
     
 private:
-    boost::shared_ptr<ImageFileReader> _fileReader;
-    boost::shared_ptr<ImageCrop> _imageCrop;
+    boost::shared_ptr<ImageFileReader<ImageType> > _fileReader;
+    boost::shared_ptr<ImageCrop<ImageType> > _imageCrop;
 };
 
-class ImageBlockFileFactory : public ImageBlockFactory
-{
+template <typename ImageType>
+class ImageBlockFileFactory : public ImageBlockFactory<ImageType> {
 public:
 	ImageBlockFileFactory(const std::string& directory);
-	boost::shared_ptr<ImageBlockReader> getReader(int n);
+	boost::shared_ptr<ImageBlockReader<ImageType> > getReader(int n);
 	
 private:
 	std::vector<boost::filesystem::path> _sortedPaths;

@@ -8,7 +8,8 @@
 
 struct ImageMissing : virtual IOError {};
 
-class ImageHttpReader : public ImageReader
+template <typename ImageType>
+class ImageHttpReader : public ImageReader<ImageType>
 {
 
 public:
@@ -16,6 +17,8 @@ public:
 
 protected:
     void readImage();
+
+    using ImageHttpReader::ImageReader::_image;
 
 private:
     std::string _url;

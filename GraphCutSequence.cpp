@@ -85,16 +85,18 @@ SequenceParameterGenerator::updateOutputs() {
 			<< _parameters->foregroundPrior << std::endl;
 }
 
-ImageAverager::ImageAverager() :
-	_average(new Image()),
+template <typename ImageType>
+ImageAverager<ImageType>::ImageAverager() :
+	_average(new ImageType()),
 	_numImages(0) {
 
 	registerInput(_image, "image");
 	registerOutput(_average, "image");
 }
 
+template <typename ImageType>
 void
-ImageAverager::accumulate() {
+ImageAverager<ImageType>::accumulate() {
 
 	updateInputs();
 
@@ -109,26 +111,29 @@ ImageAverager::accumulate() {
 	_numImages++;
 }
 
+template <typename ImageType>
 void
-ImageAverager::updateOutputs() {
+ImageAverager<ImageType>::updateOutputs() {
 
 	if (_numImages > 0)
 		*_average /= _numImages;
 }
 
-GraphCutSequence::GraphCutSequence() {
+template <typename ImageType>
+GraphCutSequence<ImageType>::GraphCutSequence() {
 
 	registerInput(_stack, "image stack");
 }
 
+template <typename ImageType>
 void
-GraphCutSequence::createSequence() {
+GraphCutSequence<ImageType>::createSequence() {
 
 	updateInputs();
 
 	unsigned int i = 0;
 
-	for (boost::shared_ptr<Image> image : *_stack) {
+	for (boost::shared_ptr<ImageType> image : *_stack) {
 
 		LOG_DEBUG(graphcutsequencelog) << "setting up processing pipeline of image " << i << std::endl;
 
@@ -139,9 +144,9 @@ GraphCutSequence::createSequence() {
 
 		boost::shared_ptr<SequenceParameterGenerator> parameterGenerator = boost::make_shared<SequenceParameterGenerator>();
 		boost::shared_ptr<GraphCut>                   graphCut           = boost::make_shared<GraphCut>();
-		boost::shared_ptr<ImageWriter>                imageWriter        = boost::make_shared<ImageWriter>("");
-		boost::shared_ptr<ImageAverager>              imageAverager      = boost::make_shared<ImageAverager>();
-		boost::shared_ptr<ImageWriter>                averageImageWriter = boost::make_shared<ImageWriter>(std::string("./slices/slices_") + imageNumber + ".png");
+		boost::shared_ptr<ImageWriter<ImageType> >    imageWriter        = boost::make_shared<ImageWriter<ImageType> >("");
+		boost::shared_ptr<ImageAverager<ImageType> >  imageAverager      = boost::make_shared<ImageAverager<ImageType> >();
+		boost::shared_ptr<ImageWriter<ImageType> >    averageImageWriter = boost::make_shared<ImageWriter<ImageType> >(std::string("./slices/slices_") + imageNumber + ".png");
 
 		graphCut->setInput("parameters", parameterGenerator->getOutput());
 		graphCut->setInput("image", image);
@@ -177,8 +182,9 @@ GraphCutSequence::createSequence() {
 	}
 }
 
+template <typename ImageType>
 void
-GraphCutSequence::updateOutputs() {
+GraphCutSequence<ImageType>::updateOutputs() {
 
 	// nothing to do here
 }

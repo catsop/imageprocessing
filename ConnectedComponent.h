@@ -41,14 +41,12 @@ public:
 	};
 
 	ConnectedComponent(
-			boost::shared_ptr<Image> source,
 			double value,
 			boost::shared_ptr<pixel_list_type> pixelList,
 			pixel_list_type::const_iterator begin,
 			pixel_list_type::const_iterator end);
 
 	ConnectedComponent(
-			boost::shared_ptr<Image> source,
 			double value,
 			const util::point<int,2>& offset,
 			const bitmap_type& bitmap,
@@ -144,9 +142,6 @@ private:
 	mutable util::point<double, 2>          _center;
 
 	mutable bool _centerDirty;
-
-	// the image, this component was extracted from
-	boost::shared_ptr<Image>                _source;
 
 	// the range of the pixels in _pixels that belong to this component (can
 	// be all of them, if the pixel lists are not shared)

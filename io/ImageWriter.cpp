@@ -5,15 +5,17 @@
 
 logger::LogChannel imagewriterlog("imagewriterlog", "[ImageWriter] ");
 
-ImageWriter::ImageWriter(std::string filename) :
+template <typename ImageType>
+ImageWriter<ImageType>::ImageWriter(std::string filename) :
 	_filename(filename) {
 
 	// let others know about our inputs
 	registerInput(_image, "image");
 }
 
+template <typename ImageType>
 void
-ImageWriter::write(std::string filename) {
+ImageWriter<ImageType>::write(std::string filename) {
 
 	LOG_DEBUG(imagewriterlog) << "requesting image update" << std::endl;
 

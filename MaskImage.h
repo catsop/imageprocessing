@@ -6,6 +6,7 @@
 #include <pipeline/all.h>
 #include "Image.h"
 
+template <typename ImageType>
 class MaskImage : public pipeline::SimpleProcessNode<> {
 
 public:
@@ -16,9 +17,9 @@ private:
 
 	void updateOutputs();
 
-	pipeline::Input<Image> _image;
-	pipeline::Input<Image>  _mask;
-	pipeline::Output<Image> _masked;
+	pipeline::Input<ImageType> _image;
+	pipeline::Input<ImageType>  _mask;
+	pipeline::Output<ImageType> _masked;
 
 	float _maskValue;
 };

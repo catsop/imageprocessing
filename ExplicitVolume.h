@@ -32,7 +32,7 @@ public:
 	/**
 	 * Create a volume from an image stack.
 	 */
-	ExplicitVolume(const ImageStack& stack) :
+	ExplicitVolume(const ImageStack<Image<ValueType> >& stack) :
 		DiscreteVolume(stack),
 		_data(vigra::Shape3(stack.width(), stack.height(), stack.size())) {
 
@@ -74,11 +74,11 @@ public:
 	/**
 	 * 2D z-slice access.
 	 */
-	Image slice(int z) {
+	Image<ValueType> slice(int z) {
 
 		vigra::MultiArrayView<2, ValueType> slice = _data.template bind<2>(z);
 
-		Image image;
+		Image<ValueType> image;
 		image = slice;
 		image.setResolution(
 				getResolutionX(),

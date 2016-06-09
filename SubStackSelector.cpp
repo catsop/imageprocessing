@@ -2,7 +2,8 @@
 
 logger::LogChannel substackselectorlog("substackselectorlog", "[SubStackSelector] ");
 
-SubStackSelector::SubStackSelector(int firstImage, int lastImage) :
+template <typename ImageType>
+SubStackSelector<ImageType>::SubStackSelector(int firstImage, int lastImage) :
 	_firstImage(firstImage),
 	_lastImage(lastImage) {
 
@@ -10,11 +11,12 @@ SubStackSelector::SubStackSelector(int firstImage, int lastImage) :
 	registerOutput(_subStack, "stack");
 }
 
+template <typename ImageType>
 void
-SubStackSelector::updateOutputs() {
+SubStackSelector<ImageType>::updateOutputs() {
 
 	if (!_subStack)
-		_subStack = new ImageStack();
+		_subStack = new ImageStack<ImageType>();
 
 	LOG_ALL(substackselectorlog)
 			<< "selecting substack from stack of size "

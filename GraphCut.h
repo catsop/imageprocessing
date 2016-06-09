@@ -43,16 +43,16 @@ private:
 	double getPairwiseCosts(int x1, int y1, int x2, int y2);
 
 	// the input image (per-pixel foreground probabilities)
-	pipeline::Input<Image>              _image;
+	pipeline::Input<IntensityImage>     _image;
 
 	// an optional image to compute the potts term
-	pipeline::Input<Image>              _pottsImage;
+	pipeline::Input<IntensityImage>     _pottsImage;
 
 	// the paramemters (potts weight, neighborhood, ...)
 	pipeline::Input<GraphCutParameters> _parameters;
 
 	// the binary segmentation result
-	pipeline::Output<Image>             _segmentation;
+	pipeline::Output<BinaryImage>       _segmentation;
 
 	// the energy of the result
 	pipeline::Output<double>            _energy;

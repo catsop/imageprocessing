@@ -2,8 +2,9 @@
 
 #include "MedianFilter.h"
 
-MedianFilter::MedianFilter() :
-	_filtered(new Image()) {
+template <typename ImageType>
+MedianFilter<ImageType>::MedianFilter() :
+	_filtered(new ImageType()) {
 
 	registerInput(_radius, "radius");
 	registerInput(_image, "image");
@@ -11,8 +12,9 @@ MedianFilter::MedianFilter() :
 }
 
 
+template <typename ImageType>
 void
-MedianFilter::updateOutputs() {
+MedianFilter<ImageType>::updateOutputs() {
 
 	int width  = _image->width();
 	int height = _image->height();

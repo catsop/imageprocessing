@@ -5,10 +5,6 @@
 #include <imageprocessing/Image.h>
 #include <imageprocessing/ImageStack.h>
 
-// forward declarations
-class ImageStack;
-class Image;
-
 /**
  * A simple process node that takes an image stack and providese as many image
  * outputs as images have been in the stack. The outputs are created dynamically
@@ -35,6 +31,7 @@ class Image;
  * </tr>
  * </table>
  */
+template <typename ImageType>
 class ImageExtractor : public pipeline::SimpleProcessNode<> {
 
 public:
@@ -54,9 +51,9 @@ private:
 
 	void onInputSet(const pipeline::InputSetBase& signal);
 
-	pipeline::Input<ImageStack> _stack;
+	pipeline::Input<ImageStack<ImageType>> _stack;
 
-	std::vector<pipeline::Output<Image> > _images;
+	std::vector<pipeline::Output<ImageType> > _images;
 };
 
 #endif // IMAGEPROCESSING_IMAGE_EXTRACTOR_H__

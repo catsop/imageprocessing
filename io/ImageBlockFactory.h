@@ -5,10 +5,13 @@
 #include <boost/shared_ptr.hpp>
 #include <pipeline/Data.h>
 
+template <typename ImageType>
 class ImageBlockFactory : public pipeline::Data
 {
 public:
-	virtual boost::shared_ptr<ImageBlockReader> getReader(int /*n*/) { return boost::shared_ptr<ImageBlockReader>(); }
+	virtual boost::shared_ptr<ImageBlockReader<ImageType> > getReader(int /*n*/) {
+		return boost::shared_ptr<ImageBlockReader<ImageType> >();
+	}
 };
 
 #endif //IMAGE_BLOCK_FACTORY_H__

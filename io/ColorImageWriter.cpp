@@ -6,7 +6,8 @@
 
 logger::LogChannel colorimagewriterlog("colorimagewriterlog", "[ColorImageWriter] ");
 
-ColorImageWriter::ColorImageWriter(std::string filename) :
+template <typename ImageType>
+ColorImageWriter<ImageType>::ColorImageWriter(std::string filename) :
 	_filename(filename) {
 
 	// let others know about our inputs
@@ -15,8 +16,9 @@ ColorImageWriter::ColorImageWriter(std::string filename) :
 	registerInput(_b, "b");
 }
 
+template <typename ImageType>
 void
-ColorImageWriter::write(std::string filename) {
+ColorImageWriter<ImageType>::write(std::string filename) {
 
 	LOG_DEBUG(colorimagewriterlog) << "requesting image update" << std::endl;
 
@@ -41,9 +43,9 @@ ColorImageWriter::write(std::string filename) {
 
 	vigra::MultiArray<2, vigra::RGBValue<float> > rgbImage(_r->shape());
 
-	Image::iterator ri = _r->begin();
-	Image::iterator gi = _g->begin();
-	Image::iterator bi = _b->begin();
+	typename ImageType::iterator ri = _r->begin();
+	typename ImageType::iterator gi = _g->begin();
+	typename ImageType::iterator bi = _b->begin();
 	vigra::MultiArray<2, vigra::RGBValue<float> >::iterator rgb = rgbImage.begin();
 
 	while (rgb != rgbImage.end()) {

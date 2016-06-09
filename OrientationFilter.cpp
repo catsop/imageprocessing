@@ -8,8 +8,9 @@
 
 logger::LogChannel orientationfilterlog("orientationfilterlog", "[OrientationFilter] ");
 
-OrientationFilter::OrientationFilter(unsigned int numOrientations) :
-		_orientations(new Image()),
+template <typename ImageType>
+OrientationFilter<ImageType>::OrientationFilter(unsigned int numOrientations) :
+		_orientations(new Image<float>()),
 		_numOrientations(numOrientations) {
 
 	registerInput(_scale, "scale");
@@ -18,8 +19,9 @@ OrientationFilter::OrientationFilter(unsigned int numOrientations) :
 }
 
 
+template <typename ImageType>
 void
-OrientationFilter::updateOutputs() {
+OrientationFilter<ImageType>::updateOutputs() {
 
 	LOG_DEBUG(orientationfilterlog)
 			<< "updating orientations with scale " << (*_scale)
@@ -49,8 +51,9 @@ OrientationFilter::updateOutputs() {
 			discretizeOrientations);
 }
 
+template <typename ImageType>
 float
-OrientationFilter::DiscretizeOrientation::operator()(float gradX, float gradY) const {
+OrientationFilter<ImageType>::DiscretizeOrientation::operator()(float gradX, float gradY) const {
 
 	float orientationX = -gradY;
 	float orientationY = gradX;

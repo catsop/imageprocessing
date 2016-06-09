@@ -1,6 +1,7 @@
 #include "ImageBlockReader.h"
 
-ImageBlockReader::ImageBlockReader()
+template <typename ImageType>
+ImageBlockReader<ImageType>::ImageBlockReader()
 {
     registerInput(_block, "block");
 	registerInput(_sectionId, "section");

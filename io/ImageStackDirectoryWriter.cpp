@@ -8,18 +8,20 @@
 
 logger::LogChannel imagestackdirectorywriterlog("imagestackdirectorywriterlog", "[ImageStackDirectoryWriter] ");
 
-ImageStackDirectoryWriter::ImageStackDirectoryWriter(std::string directory, std::string basename) :
+template <typename ImageType>
+ImageStackDirectoryWriter<ImageType>::ImageStackDirectoryWriter(std::string directory, std::string basename) :
 	_directory(directory),
 	_basename(basename),
 	_dirty(false) {
 
 	registerInput(_stack, "image stack");
 
-	_stack.registerCallback(&ImageStackDirectoryWriter::onModified, this);
+	_stack.registerCallback(&ImageStackDirectoryWriter<ImageType>::onModified, this);
 }
 
+template <typename ImageType>
 void
-ImageStackDirectoryWriter::onModified(const pipeline::Modified&) {
+ImageStackDirectoryWriter<ImageType>::onModified(const pipeline::Modified&) {
 
 	boost::mutex::scoped_lock lock(_dirtyMutex);
 
@@ -28,8 +30,9 @@ ImageStackDirectoryWriter::onModified(const pipeline::Modified&) {
 	_dirty = true;
 }
 
+template <typename ImageType>
 bool
-ImageStackDirectoryWriter::write(std::string basename) {
+ImageStackDirectoryWriter<ImageType>::write(std::string basename) {
 
 	{
 		boost::mutex::scoped_lock lock(_dirtyMutex);
@@ -61,7 +64,7 @@ ImageStackDirectoryWriter::write(std::string basename) {
 
 	unsigned int i = 0;
 
-	for (boost::shared_ptr<Image> image : *_stack) {
+	for (boost::shared_ptr<ImageType> image : *_stack) {
 
 		std::stringstream number;
 		number << std::setw(8) << std::setfill('0');

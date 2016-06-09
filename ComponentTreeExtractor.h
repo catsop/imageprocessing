@@ -24,10 +24,10 @@ private:
 	public:
 
 		ComponentVisitor(
-				boost::shared_ptr<Image> image,
-				unsigned int             minSize,
-				unsigned int             maxSize,
-				bool                     spacedEdgeImage) :
+				boost::shared_ptr<IntensityImage> image,
+				unsigned int                      minSize,
+				unsigned int                      maxSize,
+				bool                              spacedEdgeImage) :
 			_image(image),
 			_minSize(minSize),
 			_maxSize(maxSize),
@@ -52,7 +52,7 @@ private:
 			return (a.begin() >= b.begin() && a.end() <= b.end());
 		}
 
-		boost::shared_ptr<Image>     _image;
+		boost::shared_ptr<IntensityImage> _image;
 		boost::shared_ptr<PixelList> _pixelList;
 
 		// stack of open root nodes while constructing the tree
@@ -70,7 +70,7 @@ private:
 
 	void updateOutputs();
 
-	pipeline::Input<Image>                            _image;
+	pipeline::Input<IntensityImage>                   _image;
 	pipeline::Input<ComponentTreeExtractorParameters> _parameters;
 	pipeline::Output<ComponentTree>                   _componentTree;
 };
@@ -111,7 +111,6 @@ ComponentTreeExtractor<Precision>::ComponentVisitor::finalizeComponent(
 	boost::shared_ptr<ComponentTree::Node> node
 			= boost::make_shared<ComponentTree::Node>(
 					boost::make_shared<ConnectedComponent>(
-							_image,
 							value,
 							_pixelList,
 							begin,
@@ -183,7 +182,7 @@ ComponentTreeExtractor<Precision>::updateOutputs() {
 
 	if (_parameters->sameIntensityComponents) {
 
-		Image separatedRegions = *_image;
+		IntensityImage separatedRegions = *_image;
 		for (unsigned int y = 0; y < separatedRegions.height() - 1; y++)
 			for (unsigned int x = 0; x < separatedRegions.width() - 1; x++) {
 

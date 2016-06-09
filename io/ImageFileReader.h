@@ -5,7 +5,8 @@
 #include <imageprocessing/Image.h>
 #include "ImageReader.h"
 
-class ImageFileReader : public ImageReader {
+template <typename ImageType>
+class ImageFileReader : public ImageReader<ImageType> {
 
 public:
 
@@ -16,6 +17,8 @@ protected:
 	 * Reads the image.
 	 */
 	void readImage();
+
+	using ImageFileReader::ImageReader::_image;
 
 private:
 	// the name of the file to read

@@ -5,6 +5,7 @@
 #include <signals/Slot.h>
 #include <imageprocessing/Image.h>
 
+template <typename ImageType>
 class ColorImageWriter : public pipeline::SimpleProcessNode<> {
 
 public:
@@ -21,9 +22,9 @@ private:
 	void updateOutputs() {};
 
 	// the input images
-	pipeline::Input<Image> _r;
-	pipeline::Input<Image> _g;
-	pipeline::Input<Image> _b;
+	pipeline::Input<ImageType> _r;
+	pipeline::Input<ImageType> _g;
+	pipeline::Input<ImageType> _b;
 
 	// the name of the file to write to
 	std::string _filename;

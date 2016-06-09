@@ -7,13 +7,15 @@
 
 logger::LogChannel imagefilereaderlog("imagefilereaderlog", "[ImageFileReader] ");
 
-ImageFileReader::ImageFileReader(std::string filename) :
+template <typename ImageType>
+ImageFileReader<ImageType>::ImageFileReader(std::string filename) :
 	_filename(filename) {
 }
 
 
+template <typename ImageType>
 void
-ImageFileReader::readImage() {
+ImageFileReader<ImageType>::readImage() {
 
 	// get information about the image to read
 	vigra::ImageImportInfo info(_filename.c_str());
@@ -27,7 +29,7 @@ ImageFileReader::readImage() {
 	}
 
 	// allocate image
-	_image = new Image(info.width(), info.height());
+	_image = new ImageType(info.width(), info.height());
 	_image->setIdentifiyer(_filename);
 
 	try {
@@ -61,3 +63,5 @@ ImageFileReader::readImage() {
 			vigra::destImage(*_image),
 			vigra::linearIntensityTransform<float>(1.0/factor));
 }
+
+template class ImageFileReader<IntensityImage>;

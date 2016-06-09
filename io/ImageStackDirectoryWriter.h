@@ -6,6 +6,7 @@
 #include <pipeline/all.h>
 #include <imageprocessing/ImageStack.h>
 
+template <typename ImageType>
 class ImageStackDirectoryWriter : public pipeline::SimpleProcessNode<> {
 
 public:
@@ -20,7 +21,7 @@ private:
 
 	void onModified(const pipeline::Modified&);
 
-	pipeline::Input<ImageStack> _stack;
+	pipeline::Input<ImageStack<ImageType> > _stack;
 
 	std::string _directory;
 	std::string _basename;

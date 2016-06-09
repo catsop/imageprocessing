@@ -6,62 +6,68 @@
 
 logger::LogChannel imageblockstackreaderlog("imageblockstackreaderlog", "[ImageBlockStackReader] ");
 
-ImageBlockStackReader::ImageBlockStackReader()
+template <typename ImageType>
+ImageBlockStackReader<ImageType>::ImageBlockStackReader()
 {	
 	_stackAssembler = boost::make_shared<StackAssembler>();
 	registerInput(_block, "block");
 	registerInput(_blockFactory, "factory");
 	
-	_block.registerCallback(&ImageBlockStackReader::onBlockModified, this);
-	_blockFactory.registerCallback(&ImageBlockStackReader::onFactoryModified, this);
+	_block.registerCallback(&ImageBlockStackReader<ImageType>::onBlockModified, this);
+	_blockFactory.registerCallback(&ImageBlockStackReader<ImageType>::onFactoryModified, this);
 	
 	// expose the result of the stack assembler
 	registerOutput(_stackAssembler->getOutput(), "stack");
 }
 
 /*void
-ImageBlockStackReader::updateOutputs()
+ImageBlockStackReader<ImageType>::updateOutputs()
 {
 	LOG_DEBUG(imageblockstackreaderlog) << "Updating outputs" << std::endl; 
 	
 }*/
 
 
-ImageBlockStackReader::StackAssembler::StackAssembler() {
+template <typename ImageType>
+ImageBlockStackReader<ImageType>::StackAssembler::StackAssembler() {
 
 	registerInputs(_images, "images");
 	registerOutput(_stack, "stack");
 }
 
+template <typename ImageType>
 void
-ImageBlockStackReader::StackAssembler::updateOutputs() {
+ImageBlockStackReader<ImageType>::StackAssembler::updateOutputs() {
 
 	LOG_DEBUG(imageblockstackreaderlog) << "Stack Assembler updating outputs" << std::endl;
 	_stack->clear();
 
-	for (boost::shared_ptr<Image> image : _images)
+	for (boost::shared_ptr<ImageType> image : _images)
 		_stack->add(image);
 }
 
 
 
+template <typename ImageType>
 void
-ImageBlockStackReader::onBlockModified(const pipeline::InputSetBase&)
+ImageBlockStackReader<ImageType>::onBlockModified(const pipeline::InputSetBase&)
 {
 	LOG_DEBUG(imageblockstackreaderlog) << "Got block modified" << std::endl;
 	setup();
 }
 
+template <typename ImageType>
 void
-ImageBlockStackReader::onFactoryModified(const pipeline::InputSetBase& )
+ImageBlockStackReader<ImageType>::onFactoryModified(const pipeline::InputSetBase& )
 {
 	LOG_DEBUG(imageblockstackreaderlog) << "Got factory modified" << std::endl;
 	setup();
 }
 
 
+template <typename ImageType>
 void
-ImageBlockStackReader::setup()
+ImageBlockStackReader<ImageType>::setup()
 {
 	if (_block.isSet() && _blockFactory.isSet())
 	{
@@ -75,7 +81,7 @@ ImageBlockStackReader::setup()
 		{
 			LOG_DEBUG(imageblockstackreaderlog) << "Adding input for z " << z << std::endl; 
 			pipeline::Value<unsigned int> wrapZ(z);
-			boost::shared_ptr<ImageBlockReader> reader = _blockFactory->getReader(z);
+			boost::shared_ptr<ImageBlockReader<ImageType> > reader = _blockFactory->getReader(z);
 			_blockReaders.push_back(reader);
 			reader->setInput("block", _block);
 			

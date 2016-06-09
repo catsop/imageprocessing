@@ -9,10 +9,8 @@
 #include <imageprocessing/Image.h>
 #include <imageprocessing/ImageStack.h>
 
-// forward declarations
-class Image;
-class ImageStack;
 
+template <typename ImageType>
 class ImageStackDirectoryReader : public pipeline::ProcessNode {
 
 public:
@@ -33,9 +31,9 @@ private:
 
 		void updateOutputs();
 
-		pipeline::Inputs<Image> _images;
+		pipeline::Inputs<ImageType> _images;
 
-		pipeline::Output<ImageStack> _stack;
+		pipeline::Output<ImageStack<ImageType> > _stack;
 
 		float _resX;
 		float _resY;

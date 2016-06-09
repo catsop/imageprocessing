@@ -4,6 +4,7 @@
 #include <pipeline/all.h>
 #include <imageprocessing/ImageStack.h>
 
+template <typename ImageType>
 class SubStackSelector : public pipeline::SimpleProcessNode<> {
 
 public:
@@ -21,8 +22,8 @@ private:
 
 	void updateOutputs();
 
-	pipeline::Input<ImageStack>  _stack;
-	pipeline::Output<ImageStack> _subStack;
+	pipeline::Input<ImageStack<ImageType> >  _stack;
+	pipeline::Output<ImageStack<ImageType> > _subStack;
 
 	int _firstImage;
 	int _lastImage;
