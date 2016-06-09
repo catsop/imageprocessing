@@ -18,4 +18,4 @@ ImageReader<ImageType>::updateOutputs() {
 	readImage();
 }
 
-template class ImageReader<IntensityImage>;
+EXPLICITLY_INSTANTIATE_COMMON_IMAGE_TYPES(ImageReader);

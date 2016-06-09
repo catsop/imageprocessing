@@ -64,4 +64,4 @@ ImageFileReader<ImageType>::readImage() {
 			vigra::linearIntensityTransform<float>(1.0/factor));
 }
 
-template class ImageFileReader<IntensityImage>;
+EXPLICITLY_INSTANTIATE_COMMON_IMAGE_TYPES(ImageFileReader);

@@ -53,4 +53,4 @@ ImageExtractor<ImageType>::getNumImages() {
 	return _images.size();
 }
 
-template class ImageExtractor<IntensityImage>;
+EXPLICITLY_INSTANTIATE_COMMON_IMAGE_TYPES(ImageExtractor);

@@ -21,4 +21,4 @@ ImageStack<ImageType>::addAll(boost::shared_ptr<ImageStack<ImageType> > sections
 	_sections.insert(_sections.end(), sections->begin(), sections->end());
 }
 
-template class ImageStack<IntensityImage>;
+EXPLICITLY_INSTANTIATE_COMMON_IMAGE_TYPES(ImageStack);

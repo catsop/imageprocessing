@@ -114,4 +114,4 @@ ImageStackDirectoryReader<ImageType>::StackAssembler::updateOutputs() {
 	_stack->setResolution(_resX, _resY, _resZ);
 }
 
-template class ImageStackDirectoryReader<IntensityImage>;
+EXPLICITLY_INSTANTIATE_COMMON_IMAGE_TYPES(ImageStackDirectoryReader);

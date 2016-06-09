@@ -71,4 +71,4 @@ ImageHttpReader<ImageType>::readImage()
     }
 }
 
-template class ImageHttpReader<IntensityImage>;
+EXPLICITLY_INSTANTIATE_COMMON_IMAGE_TYPES(ImageHttpReader);
