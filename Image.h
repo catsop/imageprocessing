@@ -9,7 +9,8 @@
 #include "DiscreteVolume.h"
 
 #define EXPLICITLY_INSTANTIATE_COMMON_IMAGE_TYPES(T) \
-		template class T<IntensityImage>;
+		template class T<IntensityImage>;\
+		template class T<LabelImage>;
 
 /**
  * A vigra-compatible image class.

@@ -1,7 +1,11 @@
+#include <limits>
+
 #include <Magick++.h>
+
 #include <util/exceptions.h>
 #include <util/Logger.h>
 #include "ImageHttpReader.h"
+#include "ImageWriter.h"
 
 logger::LogChannel imagehttpreaderlog("imagehttpreaderlog", "[ImageHttpReader] ");
 
@@ -12,6 +16,10 @@ ImageHttpReader<ImageType>::ImageHttpReader(std::string url, const HttpClient& c
 {
 
 }
+
+template <typename ImageType>
+void
+pushPixels(ImageType& image, Magick::PixelPacket* pixels);
 
 template <typename ImageType>
 void
@@ -64,10 +72,33 @@ ImageHttpReader<ImageType>::readImage()
 
     LOG_DEBUG(imagehttpreaderlog) << "Pushing pixels..." << std::endl;
 
-    for (int i = 0; i < w * h; ++i)
-    {
-        double dval = Magick::Color::scaleQuantumToDouble( pixels[i].green );
-        (*_image)[i] = (float)dval;
+    pushPixels<ImageType>(*_image, pixels);
+}
+
+template <>
+void
+pushPixels<IntensityImage>(IntensityImage& image, Magick::PixelPacket* pixels) {
+
+    for (int i = 0; i < image.size(); ++i) {
+
+        double dval = Magick::Color::scaleQuantumToDouble(pixels[i].green);
+        image[i] = static_cast<IntensityImage::value_type>(dval);
+    }
+}
+
+template <>
+void
+pushPixels<LabelImage>(LabelImage& image, Magick::PixelPacket* pixels) {
+
+    for (int i = 0; i < image.size(); ++i) {
+
+        LabelImage::value_type label = 0;
+        unsigned short *label_shorts = reinterpret_cast<unsigned short *>(&label);
+        label_shorts[LABEL_IMAGE_RGBA_ORDER[0]] = pixels[i].red;
+        label_shorts[LABEL_IMAGE_RGBA_ORDER[1]] = pixels[i].green;
+        label_shorts[LABEL_IMAGE_RGBA_ORDER[2]] = pixels[i].blue;
+        label_shorts[LABEL_IMAGE_RGBA_ORDER[3]] = std::numeric_limits<unsigned short>::max() - pixels[i].opacity;
+        image[i] = label;
     }
 }
 
