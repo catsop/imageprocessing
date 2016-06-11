@@ -10,7 +10,7 @@
 
 extern logger::LogChannel componenttreeextractorlog;
 
-template <typename Precision = unsigned char>
+template <typename Precision = unsigned char, typename ImageType = IntensityImage>
 class ComponentTreeExtractor : public pipeline::SimpleProcessNode<> {
 
 public:
@@ -19,15 +19,15 @@ public:
 
 private:
 
-	class ComponentVisitor : public ImageLevelParser<Precision>::Visitor {
+	class ComponentVisitor : public ImageLevelParser<Precision, ImageType>::Visitor {
 
 	public:
 
 		ComponentVisitor(
-				boost::shared_ptr<IntensityImage> image,
-				unsigned int                      minSize,
-				unsigned int                      maxSize,
-				bool                              spacedEdgeImage) :
+				boost::shared_ptr<ImageType> image,
+				unsigned int                 minSize,
+				unsigned int                 maxSize,
+				bool                         spacedEdgeImage) :
 			_image(image),
 			_minSize(minSize),
 			_maxSize(maxSize),
@@ -36,9 +36,9 @@ private:
 		void setPixelList(boost::shared_ptr<PixelList> pixelList) { _pixelList = pixelList; }
 
 		inline void finalizeComponent(
-				float                        value,
-				PixelList::const_iterator    begin,
-				PixelList::const_iterator    end);
+				typename ImageType::value_type value,
+				PixelList::const_iterator      begin,
+				PixelList::const_iterator      end);
 
 		boost::shared_ptr<ComponentTree::Node> getRoot();
 
@@ -70,8 +70,8 @@ private:
 
 	void updateOutputs();
 
-	pipeline::Input<IntensityImage>                   _image;
-	pipeline::Input<ComponentTreeExtractorParameters> _parameters;
+	pipeline::Input<ImageType>                        _image;
+	pipeline::Input<ComponentTreeExtractorParameters<typename ImageType::value_type> > _parameters;
 	pipeline::Output<ComponentTree>                   _componentTree;
 };
 
@@ -79,12 +79,12 @@ private:
 // IMPLEMENTATION //
 ////////////////////
 
-template <typename Precision>
+template <typename Precision, typename ImageType>
 void
-ComponentTreeExtractor<Precision>::ComponentVisitor::finalizeComponent(
-		float                        value,
-		PixelList::const_iterator    begin,
-		PixelList::const_iterator    end) {
+ComponentTreeExtractor<Precision, ImageType>::ComponentVisitor::finalizeComponent(
+		typename ImageType::value_type value,
+		PixelList::const_iterator      begin,
+		PixelList::const_iterator      end) {
 
 	bool changed = (begin != _prevBegin || end != _prevEnd);
 
@@ -129,15 +129,15 @@ ComponentTreeExtractor<Precision>::ComponentVisitor::finalizeComponent(
 	_roots.push(node);
 }
 
-template <typename Precision>
+template <typename Precision, typename ImageType>
 boost::shared_ptr<ComponentTree::Node>
-ComponentTreeExtractor<Precision>::ComponentVisitor::getRoot() {
+ComponentTreeExtractor<Precision, ImageType>::ComponentVisitor::getRoot() {
 
 	return _roots.top();
 }
 
-template <typename Precision>
-ComponentTreeExtractor<Precision>::ComponentTreeExtractor() {
+template <typename Precision, typename ImageType>
+ComponentTreeExtractor<Precision, ImageType>::ComponentTreeExtractor() {
 
 	registerInput(_image, "image");
 	registerInput(_parameters, "parameters", pipeline::Optional);
@@ -145,9 +145,9 @@ ComponentTreeExtractor<Precision>::ComponentTreeExtractor() {
 	registerOutput(_componentTree, "component tree");
 }
 
-template <typename Precision>
+template <typename Precision, typename ImageType>
 void
-ComponentTreeExtractor<Precision>::updateOutputs() {
+ComponentTreeExtractor<Precision, ImageType>::updateOutputs() {
 
 	if (!_componentTree)
 		_componentTree = new ComponentTree();
@@ -171,7 +171,7 @@ ComponentTreeExtractor<Precision>::updateOutputs() {
 	ComponentVisitor visitor(_image.getSharedPointer(), minSize, maxSize, spacedEdgeImage);
 
 	// create an image level parser
-	typename ImageLevelParser<Precision>::Parameters parameters;
+	typename ImageLevelParser<Precision, ImageType>::Parameters parameters;
 	if (_parameters.isSet()) {
 
 		parameters.darkToBright    = _parameters->darkToBright;
@@ -186,22 +186,22 @@ ComponentTreeExtractor<Precision>::updateOutputs() {
 		for (unsigned int y = 0; y < separatedRegions.height() - 1; y++)
 			for (unsigned int x = 0; x < separatedRegions.width() - 1; x++) {
 
-				float value = separatedRegions(x, y);
-				float right = separatedRegions(x+1, y);
-				float down  = separatedRegions(x, y+1);
+				typename ImageType::value_type value = separatedRegions(x, y),
+				                               right = separatedRegions(x+1, y),
+				                               down  = separatedRegions(x, y+1);
 
 				if ((value != right && right != 0) || (value != down && down != 0))
 					separatedRegions(x, y) = 0;
 			}
 
-		ImageLevelParser<Precision> parser(separatedRegions, parameters);
+		ImageLevelParser<Precision, ImageType> parser(separatedRegions, parameters);
 
 		// let the visitor run over the components
 		parser.parse(visitor);
 
 	} else {
 
-		ImageLevelParser<Precision> parser(*_image, parameters);
+		ImageLevelParser<Precision, ImageType> parser(*_image, parameters);
 
 		// let the visitor run over the components
 		parser.parse(visitor);

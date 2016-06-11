@@ -4,6 +4,7 @@
 #include <limits>
 #include <pipeline/Data.h>
 
+template <typename ImageValueType = float>
 struct ComponentTreeExtractorParameters : public pipeline::Data {
 
 	ComponentTreeExtractorParameters() :
@@ -32,8 +33,8 @@ struct ComponentTreeExtractorParameters : public pipeline::Data {
 	 * math across different images that might have different intensity 
 	 * extrema.
 	 */
-	float minIntensity;
-	float maxIntensity;
+	ImageValueType minIntensity;
+	ImageValueType maxIntensity;
 
 	// extract a flat tree that has only same-intensity regions
 	bool sameIntensityComponents;

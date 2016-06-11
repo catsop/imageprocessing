@@ -25,7 +25,7 @@ extern logger::LogChannel imagelevelparserlog;
  * thresholds are applied (for example, unsigned char corresponds to 255 
  * thresholds).
  */
-template <typename Precision = unsigned char>
+template <typename Precision = unsigned char, typename ImageType = IntensityImage>
 class ImageLevelParser {
 
 public:
@@ -48,8 +48,8 @@ public:
 		 * math across different images that might have different intensity 
 		 * extrema.
 		 */
-		float minIntensity;
-		float maxIntensity;
+		typename ImageType::value_type minIntensity;
+		typename ImageType::value_type maxIntensity;
 
 		/**
 		 * Indicate that the image to process is a spaced edge image. A spaced 
@@ -83,7 +83,7 @@ public:
 		 * @param value
 		 *              The threshold value of the new child.
 		 */
-		void newChildComponent(IntensityImage::value_type /*value*/) {}
+		void newChildComponent(typename ImageType::value_type /*value*/) {}
 
 		/**
 		 * Set the pixel list that contains the pixel locations of each 
@@ -108,16 +108,16 @@ public:
 		 *              the current component.
 		 */
 		void finalizeComponent(
-				IntensityImage::value_type   value,
-				PixelList::const_iterator    begin,
-				PixelList::const_iterator    end) {}
+				typename ImageType::value_type value,
+				PixelList::const_iterator      begin,
+				PixelList::const_iterator      end) {}
 	};
 
 	/**
 	 * Create a new image level parser for the given image with the given 
 	 * parameters.
 	 */
-	ImageLevelParser(const IntensityImage& image, const Parameters& parameters = Parameters());
+	ImageLevelParser(const ImageType& image, const Parameters& parameters = Parameters());
 
 	/**
 	 * Parse the image. The provided visitor has to implement the interface of 
@@ -213,7 +213,7 @@ private:
 	 * @return true, if there is such a boundary location
 	 */
 	bool popLowestBoundaryLocation(
-			unsigned int level, // not Precision, we have to pass MaxValue + 1
+			Precision    level,
 			point_type&  boundaryLocation,
 			Precision&   boundaryLevel);
 
@@ -270,12 +270,12 @@ private:
 	/**
 	 * Discretized the input image into the range defined by Precision.
 	 */
-	void discretizeImage(const IntensityImage& image);
+	void discretizeImage(const ImageType& image);
 
 	/**
 	 * Get the orignal value that corresponds to the given discretized value.
 	 */
-	float getOriginalValue(Precision value);
+	typename ImageType::value_type getOriginalValue(Precision value);
 
 	static const Precision MaxValue;
 
@@ -283,14 +283,15 @@ private:
 	vigra::MultiArray<2, Precision> _image;
 
 	// min and max value of the original image
-	float _min, _max;
+	typename ImageType::value_type _min, _max;
 
 	// parameters of the parsing algorithm
 	Parameters _parameters;
 
 	// the current location of the parsing algorithm
-	point_type   _currentLocation;
-	unsigned int _currentLevel; // not Precision, since we have to be able to express MaxValue + 1
+	point_type _currentLocation;
+	Precision  _currentLevel;
+	bool       _initCurrentLevel; // Indicates initializing the current level, since we cannot express MaxValue + 1
 
 	// the pixel list, shared ownership with visitors
 	boost::shared_ptr<PixelList> _pixelList;
@@ -315,20 +316,21 @@ private:
 	vigra::MultiArray<2, bool> _visited;
 };
 
-template <typename Precision>
-const Precision ImageLevelParser<Precision>::MaxValue = std::numeric_limits<Precision>::max();
-template <typename Precision>
-const typename ImageLevelParser<Precision>::Direction ImageLevelParser<Precision>::Right = 0;
-template <typename Precision>
-const typename ImageLevelParser<Precision>::Direction ImageLevelParser<Precision>::Down  = 1;
-template <typename Precision>
-const typename ImageLevelParser<Precision>::Direction ImageLevelParser<Precision>::Left  = 2;
-template <typename Precision>
-const typename ImageLevelParser<Precision>::Direction ImageLevelParser<Precision>::Up    = 3;
+template <typename Precision, typename ImageType>
+const Precision ImageLevelParser<Precision, ImageType>::MaxValue = std::numeric_limits<Precision>::max();
+template <typename Precision, typename ImageType>
+const typename ImageLevelParser<Precision, ImageType>::Direction ImageLevelParser<Precision, ImageType>::Right = 0;
+template <typename Precision, typename ImageType>
+const typename ImageLevelParser<Precision, ImageType>::Direction ImageLevelParser<Precision, ImageType>::Down  = 1;
+template <typename Precision, typename ImageType>
+const typename ImageLevelParser<Precision, ImageType>::Direction ImageLevelParser<Precision, ImageType>::Left  = 2;
+template <typename Precision, typename ImageType>
+const typename ImageLevelParser<Precision, ImageType>::Direction ImageLevelParser<Precision, ImageType>::Up    = 3;
 
-template <typename Precision>
-ImageLevelParser<Precision>::ImageLevelParser(const IntensityImage& image, const Parameters& parameters) :
+template <typename Precision, typename ImageType>
+ImageLevelParser<Precision, ImageType>::ImageLevelParser(const ImageType& image, const Parameters& parameters) :
 	_parameters(parameters),
+	_initCurrentLevel(false),
 	_pixelList(boost::make_shared<PixelList>(image.size())),
 	_boundaryLocations(MaxValue + 1),
 	_numOpenLocations(0) {
@@ -344,10 +346,10 @@ ImageLevelParser<Precision>::ImageLevelParser(const IntensityImage& image, const
 	this->discretizeImage(image);
 }
 
-template <typename Precision>
+template <typename Precision, typename ImageType>
 template <typename VisitorType>
 void
-ImageLevelParser<Precision>::parse(VisitorType& visitor) {
+ImageLevelParser<Precision, ImageType>::parse(VisitorType& visitor) {
 
 	LOG_ALL(imagelevelparserlog) << "parsing image" << std::endl;
 
@@ -357,7 +359,8 @@ ImageLevelParser<Precision>::parse(VisitorType& visitor) {
 		visitor.setPixelList(_pixelList);
 
 	// Pretend we come from level MaxValue + 1...
-	_currentLevel = MaxValue + 1;
+	_currentLevel = MaxValue;
+	_initCurrentLevel = true;
 
 	// ...and go to our initial pixel. This way we make sure enough components 
 	// are put on the stack.
@@ -392,18 +395,20 @@ ImageLevelParser<Precision>::parse(VisitorType& visitor) {
 	}
 }
 
-template <typename Precision>
+template <typename Precision, typename ImageType>
 template <typename VisitorType>
 void
-ImageLevelParser<Precision>::gotoLocation(const point_type& newLocation, VisitorType& visitor) {
+ImageLevelParser<Precision, ImageType>::gotoLocation(const point_type& newLocation, VisitorType& visitor) {
 
 	Precision newLevel = _image(newLocation.x(), newLocation.y());
 
 	// if we descend
-	if (_currentLevel > newLevel) {
+	if (_currentLevel > newLevel || _initCurrentLevel) {
 
 		// begin a new component for each level that we descend
-		for (Precision level = _currentLevel- 1;; level--) {
+		for (Precision level = _currentLevel - (_initCurrentLevel ? 0 : 1);; level--) {
+
+			_initCurrentLevel = false;
 
 			beginComponent(level, visitor);
 
@@ -442,10 +447,10 @@ ImageLevelParser<Precision>::gotoLocation(const point_type& newLocation, Visitor
 	}
 }
 
-template <typename Precision>
+template <typename Precision, typename ImageType>
 template <typename VisitorType>
 void
-ImageLevelParser<Precision>::fillLevel(VisitorType& visitor) {
+ImageLevelParser<Precision, ImageType>::fillLevel(VisitorType& visitor) {
 
 	// we are supposed to fill all adjacent pixels of the current pixel that 
 	// have the same level
@@ -551,10 +556,10 @@ ImageLevelParser<Precision>::fillLevel(VisitorType& visitor) {
 	}
 }
 
-template <typename Precision>
+template <typename Precision, typename ImageType>
 template <typename VisitorType>
 bool
-ImageLevelParser<Precision>::gotoHigherLevel(VisitorType& visitor) {
+ImageLevelParser<Precision, ImageType>::gotoHigherLevel(VisitorType& visitor) {
 
 	point_type newLocation;
 	Precision  newLevel;
@@ -606,10 +611,10 @@ ImageLevelParser<Precision>::gotoHigherLevel(VisitorType& visitor) {
 	return true;
 }
 
-template <typename Precision>
+template <typename Precision, typename ImageType>
 template <typename VisitorType>
 bool
-ImageLevelParser<Precision>::gotoLowerLevel(Precision referenceLevel, VisitorType& visitor) {
+ImageLevelParser<Precision, ImageType>::gotoLowerLevel(Precision referenceLevel, VisitorType& visitor) {
 
 	point_type newLocation;
 	Precision  newLevel;
@@ -635,24 +640,24 @@ ImageLevelParser<Precision>::gotoLowerLevel(Precision referenceLevel, VisitorTyp
 	return false;
 }
 
-template <typename Precision>
+template <typename Precision, typename ImageType>
 bool
-ImageLevelParser<Precision>::haveOpenBoundary() {
+ImageLevelParser<Precision, ImageType>::haveOpenBoundary() {
 
 	return _numOpenLocations > 0;
 }
 
-template <typename Precision>
+template <typename Precision, typename ImageType>
 void
-ImageLevelParser<Precision>::pushBoundaryLocation(const point_type& location, Precision level) {
+ImageLevelParser<Precision, ImageType>::pushBoundaryLocation(const point_type& location, Precision level) {
 
 	_boundaryLocations[level].push(location);
 	_numOpenLocations++;
 }
 
-template <typename Precision>
+template <typename Precision, typename ImageType>
 bool
-ImageLevelParser<Precision>::popBoundaryLocation(
+ImageLevelParser<Precision, ImageType>::popBoundaryLocation(
 		Precision   level,
 		point_type& boundaryLocation) {
 
@@ -666,10 +671,10 @@ ImageLevelParser<Precision>::popBoundaryLocation(
 	return true;
 }
 
-template <typename Precision>
+template <typename Precision, typename ImageType>
 bool
-ImageLevelParser<Precision>::popLowestBoundaryLocation(
-		unsigned int level,
+ImageLevelParser<Precision, ImageType>::popLowestBoundaryLocation(
+		Precision    level,
 		point_type&  boundaryLocation,
 		Precision&   boundaryLevel) {
 
@@ -685,9 +690,9 @@ ImageLevelParser<Precision>::popLowestBoundaryLocation(
 	return false;
 }
 
-template <typename Precision>
+template <typename Precision, typename ImageType>
 bool
-ImageLevelParser<Precision>::popHigherBoundaryLocation(
+ImageLevelParser<Precision, ImageType>::popHigherBoundaryLocation(
 		Precision   level,
 		point_type& boundaryLocation,
 		Precision&  boundaryLevel) {
@@ -708,10 +713,10 @@ ImageLevelParser<Precision>::popHigherBoundaryLocation(
 	}
 }
 
-template <typename Precision>
+template <typename Precision, typename ImageType>
 template <typename VisitorType>
 void
-ImageLevelParser<Precision>::beginComponent(Precision level, VisitorType& visitor) {
+ImageLevelParser<Precision, ImageType>::beginComponent(Precision level, VisitorType& visitor) {
 
 	_componentBegins.push(std::make_pair(level, _pixelList->end()));
 	if (_parameters.spacedEdgeImage)
@@ -720,10 +725,10 @@ ImageLevelParser<Precision>::beginComponent(Precision level, VisitorType& visito
 	visitor.newChildComponent(getOriginalValue(level));
 }
 
-template <typename Precision>
+template <typename Precision, typename ImageType>
 template <typename VisitorType>
 void
-ImageLevelParser<Precision>::endComponent(Precision level, VisitorType& visitor) {
+ImageLevelParser<Precision, ImageType>::endComponent(Precision level, VisitorType& visitor) {
 
 	assert(_componentBegins.size() > 0);
 
@@ -753,9 +758,9 @@ ImageLevelParser<Precision>::endComponent(Precision level, VisitorType& visitor)
 			begin, end);
 }
 
-template <typename Precision>
+template <typename Precision, typename ImageType>
 bool
-ImageLevelParser<Precision>::findNeighbor(
+ImageLevelParser<Precision, ImageType>::findNeighbor(
 		Direction   direction,
 		point_type& neighborLocation,
 		Precision&  neighborLevel) {
@@ -822,9 +827,9 @@ ImageLevelParser<Precision>::findNeighbor(
 	return true;
 }
 
-template <typename Precision>
+template <typename Precision, typename ImageType>
 void
-ImageLevelParser<Precision>::discretizeImage(const IntensityImage& image) {
+ImageLevelParser<Precision, ImageType>::discretizeImage(const ImageType& image) {
 
 	_image.reshape(image.shape());
 
@@ -866,16 +871,16 @@ ImageLevelParser<Precision>::discretizeImage(const IntensityImage& image) {
 				Param(MaxValue) - ( (Arg1()-Param(_min)) / Param(_max-_min) )*Param(MaxValue));
 }
 
-template <typename Precision>
-float
-ImageLevelParser<Precision>::getOriginalValue(Precision value) {
+template <typename Precision, typename ImageType>
+typename ImageType::value_type
+ImageLevelParser<Precision, ImageType>::getOriginalValue(Precision value) {
 
 	if (_parameters.darkToBright)
 		// v = (d/MAX)*(max-min)+min
-		return (static_cast<float>(value)/MaxValue)*(_max - _min) + _min;
+		return (static_cast<typename ImageType::value_type>(value)/MaxValue)*(_max - _min) + _min;
 	else
 		// v = ((MAX-d)/MAX)*(max-min)+min
-		return (static_cast<float>(MaxValue - value)/MaxValue)*(_max - _min) + _min;
+		return (static_cast<typename ImageType::value_type>(MaxValue - value)/MaxValue)*(_max - _min) + _min;
 }
 
 #endif // IMAGEPROCESSING_IMAGE_LEVEL_PARSER_H__
