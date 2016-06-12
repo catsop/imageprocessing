@@ -52,7 +52,7 @@ private:
 			return (a.begin() >= b.begin() && a.end() <= b.end());
 		}
 
-		boost::shared_ptr<IntensityImage> _image;
+		boost::shared_ptr<ImageType> _image;
 		boost::shared_ptr<PixelList> _pixelList;
 
 		// stack of open root nodes while constructing the tree
@@ -182,7 +182,7 @@ ComponentTreeExtractor<Precision, ImageType>::updateOutputs() {
 
 	if (_parameters->sameIntensityComponents) {
 
-		IntensityImage separatedRegions = *_image;
+		ImageType separatedRegions = *_image;
 		for (unsigned int y = 0; y < separatedRegions.height() - 1; y++)
 			for (unsigned int x = 0; x < separatedRegions.width() - 1; x++) {
 
