@@ -2,6 +2,7 @@
 #define IMAGEPROCESSING_IMAGE_LEVEL_PARSER_H__
 
 #include <stack>
+#include <type_traits>
 #include <limits>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
@@ -267,15 +268,31 @@ private:
 	static const Direction Up;
 	bool findNeighbor(Direction direction, point_type& neighborLocation, Precision& neighborLevel);
 
+	// TODO:
+	// The following methods have specializations for when Precision is the
+	// same as ImageType::value_type. These are necessary for, e.g., lossless
+	// label retrieval. Unfortunately there does not seem to be any way to
+	// achieve specialization with enable_if template parameters SFINAE for
+	// methods of a templated class, so of the remaining implementation
+	// strategies overloading is used for clarity.
+
 	/**
 	 * Discretized the input image into the range defined by Precision.
 	 */
-	void discretizeImage(const ImageType& image);
+	void discretizeImage(const ImageType& image) {
+		discretizeImageImpl(image, std::is_same<Precision, typename ImageType::value_type>());
+	}
+	void discretizeImageImpl(const ImageType& image, std::false_type);
+	void discretizeImageImpl(const ImageType& image, std::true_type);
 
 	/**
 	 * Get the orignal value that corresponds to the given discretized value.
 	 */
-	typename ImageType::value_type getOriginalValue(Precision value);
+	typename ImageType::value_type getOriginalValue(Precision value) {
+		return getOriginalValueImpl(value, std::is_same<Precision, typename ImageType::value_type>());
+	}
+	typename ImageType::value_type getOriginalValueImpl(Precision value, std::false_type);
+	typename ImageType::value_type getOriginalValueImpl(Precision value, std::true_type);
 
 	static const Precision MaxValue;
 
@@ -827,9 +844,10 @@ ImageLevelParser<Precision, ImageType>::findNeighbor(
 	return true;
 }
 
-template <typename Precision, typename ImageType>
+template <typename Precision,
+          typename ImageType>
 void
-ImageLevelParser<Precision, ImageType>::discretizeImage(const ImageType& image) {
+ImageLevelParser<Precision, ImageType>::discretizeImageImpl(const ImageType& image, std::false_type) {
 
 	_image.reshape(image.shape());
 
@@ -853,7 +871,7 @@ ImageLevelParser<Precision, ImageType>::discretizeImage(const ImageType& image) 
 	if (_max - _min > std::numeric_limits<Precision>::max())
 		LOG_ERROR(imagelevelparserlog)
 				<< "provided image has a range of " << (_max - _min)
-				<< ", whicht does not fit into given precision" << std::endl;
+				<< ", which does not fit into given precision" << std::endl;
 
 	using namespace vigra::functor;
 
@@ -871,9 +889,38 @@ ImageLevelParser<Precision, ImageType>::discretizeImage(const ImageType& image) 
 				Param(MaxValue) - ( (Arg1()-Param(_min)) / Param(_max-_min) )*Param(MaxValue));
 }
 
-template <typename Precision, typename ImageType>
+template <typename Precision,
+          typename ImageType>
+void
+ImageLevelParser<Precision, ImageType>::discretizeImageImpl(const ImageType& image, std::true_type) {
+
+	_image.reshape(image.shape());
+
+	LOG_DEBUG(imagelevelparserlog)
+			<< "Requested parser precision and image are same type; "
+			<< "ignoring min and max intensity parameters and using "
+			<< "full precision range" << std::endl;
+
+	_min = std::numeric_limits<Precision>::max();
+	_max = std::numeric_limits<Precision>::max();
+
+	using namespace vigra::functor;
+
+	if (_parameters.darkToBright)
+		vigra::copyImage(
+				srcImageRange(image),
+				destImage(_image));
+	else // invert the image on-the-fly
+		vigra::transformImage(
+				srcImageRange(image),
+				destImage(_image),
+				(Param(_max) - Arg1()) + Param(_min));
+}
+
+template <typename Precision,
+          typename ImageType>
 typename ImageType::value_type
-ImageLevelParser<Precision, ImageType>::getOriginalValue(Precision value) {
+ImageLevelParser<Precision, ImageType>::getOriginalValueImpl(Precision value, std::false_type) {
 
 	if (_parameters.darkToBright)
 		// v = (d/MAX)*(max-min)+min
@@ -881,6 +928,17 @@ ImageLevelParser<Precision, ImageType>::getOriginalValue(Precision value) {
 	else
 		// v = ((MAX-d)/MAX)*(max-min)+min
 		return (static_cast<typename ImageType::value_type>(MaxValue - value)/MaxValue)*(_max - _min) + _min;
+}
+
+template <typename Precision,
+          typename ImageType>
+typename ImageType::value_type
+ImageLevelParser<Precision, ImageType>::getOriginalValueImpl(Precision value, std::true_type) {
+
+	if (_parameters.darkToBright)
+		return value;
+	else
+		return (std::numeric_limits<Precision>::max() - value) + std::numeric_limits<Precision>::min();
 }
 
 #endif // IMAGEPROCESSING_IMAGE_LEVEL_PARSER_H__
