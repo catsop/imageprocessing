@@ -36,9 +36,9 @@ private:
 		void setPixelList(boost::shared_ptr<PixelList> pixelList) { _pixelList = pixelList; }
 
 		inline void finalizeComponent(
-				typename ImageType::value_type value,
-				PixelList::const_iterator      begin,
-				PixelList::const_iterator      end);
+				const typename ImageType::value_type value,
+				PixelList::const_iterator            begin,
+				PixelList::const_iterator            end);
 
 		boost::shared_ptr<ComponentTree::Node> getRoot();
 
@@ -82,9 +82,9 @@ private:
 template <typename Precision, typename ImageType>
 void
 ComponentTreeExtractor<Precision, ImageType>::ComponentVisitor::finalizeComponent(
-		typename ImageType::value_type value,
-		PixelList::const_iterator      begin,
-		PixelList::const_iterator      end) {
+		const typename ImageType::value_type value,
+		PixelList::const_iterator            begin,
+		PixelList::const_iterator            end) {
 
 	bool changed = (begin != _prevBegin || end != _prevEnd);
 
@@ -107,11 +107,20 @@ ComponentTreeExtractor<Precision, ImageType>::ComponentVisitor::finalizeComponen
 	LOG_ALL(componenttreeextractorlog)
 			<< "finalize component with value " << value << std::endl;
 
+	// For lossless storage of 64-bit values in components, e.g. labels,
+	// just use the value's binary representation.
+	// TODO: This is a hack to avoid templating ConnectedComponent on its value
+	// type, since it would impact lots of code for something that has little
+	// importance for its function.
+	std::array<char, 8> ccValue;
+	ccValue.fill(0);
+	memcpy(ccValue.data(), &value, std::min(sizeof(value), ccValue.size()));
+
 	// create a component tree node
 	boost::shared_ptr<ComponentTree::Node> node
 			= boost::make_shared<ComponentTree::Node>(
 					boost::make_shared<ConnectedComponent>(
-							value,
+							ccValue,
 							_pixelList,
 							begin,
 							end));

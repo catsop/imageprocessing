@@ -41,13 +41,13 @@ public:
 	};
 
 	ConnectedComponent(
-			double value,
+			std::array<char, 8> value,
 			boost::shared_ptr<pixel_list_type> pixelList,
 			pixel_list_type::const_iterator begin,
 			pixel_list_type::const_iterator end);
 
 	ConnectedComponent(
-			double value,
+			std::array<char, 8>  value,
 			const util::point<int,2>& offset,
 			const bitmap_type& bitmap,
 			const size_t size);
@@ -55,7 +55,7 @@ public:
 	/**
 	 * Get the intensity value that was assigned to this component.
 	 */
-	double getValue() const;
+	std::array<char, 8>  getValue() const;
 
 	/**
 	 * Get a begin and end iterator to the pixels that belong to this component.
@@ -133,7 +133,7 @@ private:
 	boost::shared_ptr<pixel_list_type> _pixels;
 
 	// the threshold, at which this connected component was found
-	double                                  _value;
+	std::array<char, 8>                     _value;
 
 	// the min and max x and y values
 	util::box<int,2>                        _boundingBox;

@@ -11,7 +11,7 @@
 #include "ConnectedComponent.h"
 
 ConnectedComponent::ConnectedComponent(
-		double value,
+		std::array<char, 8> value,
 		boost::shared_ptr<pixel_list_type> pixelList,
 		pixel_list_type::const_iterator begin,
 		pixel_list_type::const_iterator end) :
@@ -134,7 +134,7 @@ ConnectedComponent::ConnectedComponent(
 }
 
 ConnectedComponent::ConnectedComponent(
-		double value,
+		std::array<char, 8> value,
 		const util::point<int,2>& offset,
 		const bitmap_type& bitmap,
 		const size_t size) :
@@ -156,7 +156,7 @@ ConnectedComponent::ConnectedComponent(
 	_pixelRange = PixelRange(_pixels->begin(), _pixels->end());
 }
 
-double
+std::array<char, 8>
 ConnectedComponent::getValue() const {
 
 	return _value;
