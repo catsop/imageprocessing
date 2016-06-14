@@ -6,6 +6,7 @@
 #include <limits>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
+#include <boost/container/flat_map.hpp>
 
 #include <vigra/transformimage.hxx>
 #include <vigra/functorexpression.hxx>
@@ -15,6 +16,168 @@
 #include "Image.h"
 
 extern logger::LogChannel imagelevelparserlog;
+
+namespace image_level_parser_detail {
+
+	template <typename Precision>
+	class BoundaryLocations {
+
+	public:
+
+		typedef util::point<unsigned int,2> point_type;
+
+		/**
+		 * Put a boundary location with its level on the stack of open boundary
+		 * locations.
+		 */
+		virtual void push(
+				const point_type& location,
+				const Precision   level) = 0;
+
+		/**
+		 * Get the next open boundary location with the given level. Returns
+		 * false if there is none.
+		 *
+		 * @param level
+		 *              The reference level.
+		 *
+		 * @param boundaryLocation
+		 *              [out] The next boundary location with level smaller then
+		 *              level.
+		 */
+		virtual bool pop(
+				const Precision level,
+				point_type&     boundaryLocation) = 0;
+
+		/**
+		 * Get the lowest open boundary location that has a level smaller than
+		 * the given level.
+		 *
+		 * @param level
+		 *              The reference level.
+		 *
+		 * @param boundaryLocation
+		 *              [out] The lowest boundary location with level smaller
+		 *              then level.
+		 *
+		 * @param boundaryLevel
+		 *              [out] The level of the found boundary location.
+		 *
+		 * @return true, if there is such a boundary location
+		 */
+		virtual bool popLowest(
+				const Precision level,
+				point_type&     boundaryLocation,
+				Precision&      boundaryLevel) = 0;
+
+		/**
+		 * Get the next open boundary location that has a level higher than the
+		 * given level.
+		 *
+		 * @param level
+		 *              The reference level.
+		 *
+		 * @param boundaryLocation
+		 *              [out] The next boundary location with level higher then
+		 *              level.
+		 *
+		 * @param boundaryLevel
+		 *              [out] The level of the found boundary location.
+		 *
+		 * @return true, if there is such a boundary location
+		 */
+		virtual bool popHigher(
+				const Precision level,
+				point_type&     boundaryLocation,
+				Precision&      boundaryLevel) = 0;
+	};
+
+	template <typename Precision>
+	class DenseBoundaryLocations : BoundaryLocations<Precision> {
+
+	public:
+
+		typedef typename BoundaryLocations<Precision>::point_type point_type;
+
+		DenseBoundaryLocations(Precision maxValue) :
+			_boundaryLocations(maxValue + 1),
+			MAX_LEVEL(maxValue) {}
+
+		void push(
+				const point_type& location,
+				const Precision   level);
+
+		bool pop(
+				const Precision level,
+				point_type&     boundaryLocation);
+
+		bool popLowest(
+				const Precision level,
+				point_type&     boundaryLocation,
+				Precision&      boundaryLevel);
+
+		bool popHigher(
+				const Precision level,
+				point_type&     boundaryLocation,
+				Precision&      boundaryLevel);
+
+	private:
+		typedef std::vector<std::stack<point_type> > boundary_locations_type;
+
+		boundary_locations_type _boundaryLocations;
+
+		const Precision MAX_LEVEL;
+	};
+
+	template <typename Precision>
+	class SparseBoundaryLocations : BoundaryLocations<Precision> {
+
+	public:
+
+		typedef typename BoundaryLocations<Precision>::point_type point_type;
+
+		SparseBoundaryLocations(Precision maxValue) {
+			_boundaryLocations.reserve(std::min<size_t>({(size_t)maxValue + 1, 1024, 1<<(sizeof(Precision))}));
+		}
+
+		void push(
+				const point_type& location,
+				const Precision   level);
+
+		bool pop(
+				const Precision level,
+				point_type&     boundaryLocation);
+
+		bool popLowest(
+				const Precision level,
+				point_type&     boundaryLocation,
+				Precision&      boundaryLevel);
+
+		bool popHigher(
+				const Precision level,
+				point_type&     boundaryLocation,
+				Precision&      boundaryLevel);
+
+	private:
+		typedef boost::container::flat_map<Precision, std::stack<point_type> > boundary_locations_type;
+
+		bool pop(
+			typename boundary_locations_type::value_type& val,
+			point_type& boundaryLocation);
+
+		boundary_locations_type _boundaryLocations;
+	};
+
+	template <typename Precision>
+	struct Traits {
+		typedef SparseBoundaryLocations<Precision> boundary_locations_type;
+	};
+
+	template <>
+	struct Traits<unsigned char> {
+		typedef DenseBoundaryLocations<unsigned char> boundary_locations_type;
+	};
+}
 
 /**
  * Parses the pixels of an image in terms of the connected components of varying 
@@ -171,75 +334,6 @@ private:
 	bool gotoLowerLevel(Precision referenceLevel, VisitorType& visitor);
 
 	/**
-	 * Check if there are open boundary locations.
-	 */
-	// TODO: needed?
-	bool haveOpenBoundary();
-
-	/**
-	 * Put a boundary location with its level on the stack of open boundary 
-	 * locations.
-	 */
-	void pushBoundaryLocation(const point_type& location, Precision level);
-
-	/**
-	 * Get the next open boundary location with the given level. Returns false 
-	 * if there is none.
-	 *
-	 * @param level
-	 *              The reference level.
-	 *
-	 * @param boundaryLocation
-	 *              [out] The next boundary location with level smaller then 
-	 *              level.
-	 */
-	bool popBoundaryLocation(
-			Precision   level,
-			point_type& boundaryLocation);
-
-	/**
-	 * Get the lowest open boundary location that has a level smaller than the 
-	 * given level.
-	 *
-	 * @param level
-	 *              The reference level.
-	 *
-	 * @param boundaryLocation
-	 *              [out] The lowest boundary location with level smaller then 
-	 *              level.
-	 *
-	 * @param boundaryLevel
-	 *              [out] The level of the found boundary location.
-	 *
-	 * @return true, if there is such a boundary location
-	 */
-	bool popLowestBoundaryLocation(
-			Precision    level,
-			point_type&  boundaryLocation,
-			Precision&   boundaryLevel);
-
-	/**
-	 * Get the next open boundary location that has a level higher than the 
-	 * given level.
-	 *
-	 * @param level
-	 *              The reference level.
-	 *
-	 * @param boundaryLocation
-	 *              [out] The next boundary location with level higher then 
-	 *              level.
-	 *
-	 * @param boundaryLevel
-	 *              [out] The level of the found boundary location.
-	 *
-	 * @return true, if there is such a boundary location
-	 */
-	bool popHigherBoundaryLocation(
-			Precision   level,
-			point_type& boundaryLocation,
-			Precision&  boundaryLevel);
-
-	/**
 	 * Begin a new connected component at the current location for the given 
 	 * level.
 	 */
@@ -317,11 +411,7 @@ private:
 	boost::shared_ptr<PixelList> _condensedPixelList;
 
 	// stacks of open boundary locations
-	std::vector<std::stack<point_type> > _boundaryLocations;
-
-	// number of open boundary locations
-	// TODO: needed?
-	size_t _numOpenLocations;
+	typename image_level_parser_detail::Traits<Precision>::boundary_locations_type _boundaryLocations;
 
 	// stack of component begin iterators (with the level they have been 
 	// generated for)
@@ -349,8 +439,7 @@ ImageLevelParser<Precision, ImageType>::ImageLevelParser(const ImageType& image,
 	_parameters(parameters),
 	_initCurrentLevel(false),
 	_pixelList(boost::make_shared<PixelList>(image.size())),
-	_boundaryLocations(MaxValue + 1),
-	_numOpenLocations(0) {
+	_boundaryLocations(MaxValue) {
 
 	if (_parameters.spacedEdgeImage)
 		_condensedPixelList = boost::make_shared<PixelList>(image.size()/4);
@@ -504,7 +593,7 @@ ImageLevelParser<Precision, ImageType>::fillLevel(VisitorType& visitor) {
 				point_type currentLocation = _currentLocation;
 
 				// remember the lower neighbor location
-				pushBoundaryLocation(neighborLocation, neighborLevel);
+				_boundaryLocations.push(neighborLocation, neighborLevel);
 
 				// fill all levels that are lower than our target level (calls 
 				// to fillLevel might add more then the one we just found)
@@ -521,7 +610,7 @@ ImageLevelParser<Precision, ImageType>::fillLevel(VisitorType& visitor) {
 						//<< "), will remember it" << std::endl;
 
 				// we found a larger neighbor -- remember it
-				pushBoundaryLocation(neighborLocation, neighborLevel);
+				_boundaryLocations.push(neighborLocation, neighborLevel);
 
 			} else {
 
@@ -530,7 +619,7 @@ ImageLevelParser<Precision, ImageType>::fillLevel(VisitorType& visitor) {
 						//<< "), will remember it" << std::endl;
 
 				// we found an equal neighbor -- remember it
-				pushBoundaryLocation(neighborLocation, neighborLevel);
+				_boundaryLocations.push(neighborLocation, neighborLevel);
 			}
 		}
 
@@ -539,7 +628,7 @@ ImageLevelParser<Precision, ImageType>::fillLevel(VisitorType& visitor) {
 		while (true) {
 
 			point_type newLocation;
-			bool found = popBoundaryLocation(targetLevel, newLocation);
+			bool found = _boundaryLocations.pop(targetLevel, newLocation);
 
 			// if there aren't any other boundary locations of the current 
 			// level, we are done and bounded
@@ -589,7 +678,7 @@ ImageLevelParser<Precision, ImageType>::gotoHigherLevel(VisitorType& visitor) {
 
 	// find the lowest boundary location higher then the current level that has 
 	// not been visited yet
-	while (popHigherBoundaryLocation(_currentLevel, newLocation, newLevel))
+	while (_boundaryLocations.popHigher(_currentLevel, newLocation, newLevel))
 		if (!_visited(newLocation.x(), newLocation.y())) {
 
 			found = true;
@@ -642,7 +731,7 @@ ImageLevelParser<Precision, ImageType>::gotoLowerLevel(Precision referenceLevel,
 
 	// find the lowest boundary location higher then the reference level that 
 	// has not been visited yet
-	while (popLowestBoundaryLocation(referenceLevel, newLocation, newLevel))
+	while (_boundaryLocations.popLowest(referenceLevel, newLocation, newLevel))
 		if (!_visited(newLocation.x(), newLocation.y())) {
 
 			//LOG_ALL(imagelevelparserlog)
@@ -655,79 +744,6 @@ ImageLevelParser<Precision, ImageType>::gotoLowerLevel(Precision referenceLevel,
 		}
 
 	return false;
-}
-
-template <typename Precision, typename ImageType>
-bool
-ImageLevelParser<Precision, ImageType>::haveOpenBoundary() {
-
-	return _numOpenLocations > 0;
-}
-
-template <typename Precision, typename ImageType>
-void
-ImageLevelParser<Precision, ImageType>::pushBoundaryLocation(const point_type& location, Precision level) {
-
-	_boundaryLocations[level].push(location);
-	_numOpenLocations++;
-}
-
-template <typename Precision, typename ImageType>
-bool
-ImageLevelParser<Precision, ImageType>::popBoundaryLocation(
-		Precision   level,
-		point_type& boundaryLocation) {
-
-	if (_boundaryLocations[level].empty())
-		return false;
-
-	boundaryLocation = _boundaryLocations[level].top();
-	_boundaryLocations[level].pop();
-	_numOpenLocations--;
-
-	return true;
-}
-
-template <typename Precision, typename ImageType>
-bool
-ImageLevelParser<Precision, ImageType>::popLowestBoundaryLocation(
-		Precision    level,
-		point_type&  boundaryLocation,
-		Precision&   boundaryLevel) {
-
-	for (Precision l = 0; l < level; l++) {
-
-		if (popBoundaryLocation(l, boundaryLocation)) {
-
-			boundaryLevel = l;
-			return true;
-		}
-	}
-
-	return false;
-}
-
-template <typename Precision, typename ImageType>
-bool
-ImageLevelParser<Precision, ImageType>::popHigherBoundaryLocation(
-		Precision   level,
-		point_type& boundaryLocation,
-		Precision&  boundaryLevel) {
-
-	if (level == MaxValue)
-		return false;
-
-	for (Precision l = level + 1;; l++) {
-
-		if (popBoundaryLocation(l, boundaryLocation)) {
-
-			boundaryLevel = l;
-			return true;
-		}
-
-		if (l == MaxValue)
-			return false;
-	}
 }
 
 template <typename Precision, typename ImageType>
@@ -939,6 +955,156 @@ ImageLevelParser<Precision, ImageType>::getOriginalValueImpl(Precision value, st
 		return value;
 	else
 		return (std::numeric_limits<Precision>::max() - value) + std::numeric_limits<Precision>::min();
+}
+
+
+
+// SparseBoundaryLocations map implementation
+template <typename Precision>
+void
+image_level_parser_detail::SparseBoundaryLocations<Precision>::push(
+		const point_type& location,
+		const Precision   level) {
+
+	_boundaryLocations[level].push(location);
+}
+
+template <typename Precision>
+bool
+image_level_parser_detail::SparseBoundaryLocations<Precision>::pop(
+		const Precision level,
+		point_type&     boundaryLocation) {
+
+	typename boundary_locations_type::iterator it = _boundaryLocations.find(level);
+	if (it == _boundaryLocations.end())
+		return false;
+
+	return pop(*it, boundaryLocation);
+}
+
+template <typename Precision>
+bool
+image_level_parser_detail::SparseBoundaryLocations<Precision>::pop(
+		typename boundary_locations_type::value_type& val,
+		point_type& boundaryLocation) {
+
+	typename boundary_locations_type::mapped_type& locations = val.second;
+	if (locations.empty())
+		return false;
+
+	boundaryLocation = locations.top();
+	locations.pop();
+
+	return true;
+}
+
+template <typename Precision>
+bool
+image_level_parser_detail::SparseBoundaryLocations<Precision>::popLowest(
+		const Precision level,
+		point_type&     boundaryLocation,
+		Precision&      boundaryLevel) {
+
+	for (typename boundary_locations_type::iterator it = _boundaryLocations.begin(); (*it).first < level; ++it) {
+
+		if (pop(*it, boundaryLocation)) {
+
+			boundaryLevel = it->first;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+template <typename Precision>
+bool
+image_level_parser_detail::SparseBoundaryLocations<Precision>::popHigher(
+		const Precision level,
+		point_type&     boundaryLocation,
+		Precision&      boundaryLevel) {
+
+	for (typename boundary_locations_type::iterator it = _boundaryLocations.upper_bound(level); it != _boundaryLocations.end(); ++it) {
+
+		if (pop(*it, boundaryLocation)) {
+
+			boundaryLevel = it->first;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+
+
+// DenseBoundaryLocations vector implementation
+template <typename Precision>
+void
+image_level_parser_detail::DenseBoundaryLocations<Precision>::push(
+		const point_type& location,
+		const Precision   level) {
+
+	_boundaryLocations[level].push(location);
+}
+
+template <typename Precision>
+bool
+image_level_parser_detail::DenseBoundaryLocations<Precision>::pop(
+		const Precision level,
+		point_type&     boundaryLocation) {
+
+	typename boundary_locations_type::value_type& locations = _boundaryLocations[level];
+
+	if (locations.empty())
+		return false;
+
+	boundaryLocation = locations.top();
+	locations.pop();
+
+	return true;
+}
+
+template <typename Precision>
+bool
+image_level_parser_detail::DenseBoundaryLocations<Precision>::popLowest(
+		const Precision level,
+		point_type&     boundaryLocation,
+		Precision&      boundaryLevel) {
+
+	for (Precision l = 0; l < level; l++) {
+
+		if (pop(l, boundaryLocation)) {
+
+			boundaryLevel = l;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+template <typename Precision>
+bool
+image_level_parser_detail::DenseBoundaryLocations<Precision>::popHigher(
+		const Precision level,
+		point_type&     boundaryLocation,
+		Precision&      boundaryLevel) {
+
+	if (level == MAX_LEVEL)
+		return false;
+
+	for (Precision l = level + 1;; l++) {
+
+		if (pop(l, boundaryLocation)) {
+
+			boundaryLevel = l;
+			return true;
+		}
+
+		if (l == MAX_LEVEL)
+			return false;
+	}
 }
 
 #endif // IMAGEPROCESSING_IMAGE_LEVEL_PARSER_H__
